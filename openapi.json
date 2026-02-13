@@ -1,0 +1,779 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Endfield API",
+    "description": "终末地协议终端开放 API — 游戏数据查询、蓝图库社区、Wiki 百科、抽卡统计等功能。",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Endfield API Support",
+      "url": "https://end.shallow.ink"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.end.shallow.ink",
+      "description": "生产环境"
+    },
+    {
+      "url": "http://localhost:15618",
+      "description": "本地开发"
+    }
+  ],
+  "security": [
+    { "ApiKeyAuth": [] },
+    { "BearerAuth": [] },
+    { "AnonymousAuth": [] }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "第三方开发者 API Key（格式：sk_xxx）"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Web 平台登录用户的 JWT Access Token"
+      },
+      "AnonymousAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Anonymous-Token",
+        "description": "匿名用户 Token（格式：anon_xxx）"
+      },
+      "FrameworkToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Framework-Token",
+        "description": "游戏数据查询凭证（通过森空岛登录获取）"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "example": 0 },
+          "message": { "type": "string", "example": "成功" },
+          "data": { "type": "object" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "example": 400 },
+          "message": { "type": "string", "example": "请求参数错误" }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": {} },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "page_size": { "type": "integer" }
+        }
+      }
+    },
+    "parameters": {
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "schema": { "type": "integer", "default": 1 },
+        "description": "页码"
+      },
+      "PageSize": {
+        "name": "page_size",
+        "in": "query",
+        "schema": { "type": "integer", "default": 20, "maximum": 50 },
+        "description": "每页数量（最大 50）"
+      }
+    }
+  },
+  "tags": [
+    { "name": "健康检查", "description": "服务健康状态" },
+    { "name": "认证", "description": "用户注册、登录、Token 管理" },
+    { "name": "用户", "description": "用户信息与绑定管理" },
+    { "name": "终末地数据", "description": "游戏数据查询（需 Framework Token）" },
+    { "name": "Wiki 百科", "description": "森空岛 Wiki 数据同步与查询" },
+    { "name": "B站 Wiki", "description": "哔哩哔哩终末地 Wiki 数据" },
+    { "name": "蓝图库", "description": "蓝图发布、搜索、社区互动" },
+    { "name": "抽卡记录", "description": "抽卡数据同步与统计" },
+    { "name": "公告", "description": "游戏公告同步" },
+    { "name": "好友查询", "description": "好友搜索、面板同步" },
+    { "name": "产线计算器", "description": "配方与设备数据" },
+    { "name": "订阅管理", "description": "订阅计划、签到、支付、兑换码" },
+    { "name": "Cap 验证码", "description": "SHA-256 PoW 验证码" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["健康检查"],
+        "summary": "基础健康检查",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "服务正常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "message": { "type": "string", "example": "成功" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "ok" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/detailed": {
+      "get": {
+        "tags": ["健康检查"],
+        "summary": "详细健康检查",
+        "operationId": "healthDetailed",
+        "security": [],
+        "responses": {
+          "200": { "description": "详细健康状态（含数据库/Redis 连接状态）" }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "注册账号",
+        "operationId": "register",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password", "code"],
+                "properties": {
+                  "username": { "type": "string", "description": "用户名", "example": "endfield_user" },
+                  "email": { "type": "string", "format": "email", "description": "邮箱" },
+                  "password": { "type": "string", "description": "密码（≥8位，含大小写和数字）" },
+                  "code": { "type": "string", "description": "邮箱验证码（6位）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "注册成功，返回用户信息和 Token" },
+          "400": { "description": "参数错误或验证码无效" }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "账号密码登录",
+        "operationId": "login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["account", "password"],
+                "properties": {
+                  "account": { "type": "string", "description": "用户名或邮箱" },
+                  "password": { "type": "string", "description": "密码" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "type": "object" },
+                        "access_token": { "type": "string" },
+                        "refresh_token": { "type": "string" },
+                        "expires_in": { "type": "integer", "example": 900 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "账号或密码错误" }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "刷新 Access Token",
+        "operationId": "refreshToken",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refresh_token"],
+                "properties": {
+                  "refresh_token": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "刷新成功，返回新的 access_token 和 refresh_token" }
+        }
+      }
+    },
+    "/api/v1/auth/anonymous-token": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "获取匿名 Token",
+        "operationId": "getAnonymousToken",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fingerprint"],
+                "properties": {
+                  "fingerprint": { "type": "string", "minLength": 32, "description": "设备指纹（≥32字符）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string", "example": "anon_xxxx" },
+                        "expires_in": { "type": "integer", "example": 7200 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/{provider}": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "获取 OAuth 授权 URL",
+        "operationId": "getOAuthUrl",
+        "security": [],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "enum": ["qq", "github"] }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["login", "bind"] },
+            "description": "bind 用于已登录用户绑定 OAuth 账号"
+          }
+        ],
+        "responses": {
+          "200": { "description": "返回授权 URL 和 state" }
+        }
+      }
+    },
+    "/api/v1/user/profile": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "获取当前用户信息",
+        "operationId": "getUserProfile",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "用户信息" },
+          "401": { "description": "未登录" }
+        }
+      }
+    },
+    "/api/v1/bindings": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "获取绑定列表",
+        "operationId": "getBindings",
+        "parameters": [
+          {
+            "name": "user_identifier",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "用户标识（API Key 认证时必须）"
+          }
+        ],
+        "responses": {
+          "200": { "description": "绑定列表" }
+        }
+      },
+      "post": {
+        "tags": ["用户"],
+        "summary": "创建绑定",
+        "operationId": "createBinding",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["framework_token"],
+                "properties": {
+                  "framework_token": { "type": "string" },
+                  "user_identifier": { "type": "string", "description": "API Key 认证时需要" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "绑定成功" }
+        }
+      }
+    },
+    "/api/endfield/user": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取森空岛用户信息",
+        "operationId": "getEndfieldUser",
+        "security": [
+          { "ApiKeyAuth": [], "FrameworkToken": [] },
+          { "BearerAuth": [], "FrameworkToken": [] },
+          { "AnonymousAuth": [], "FrameworkToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "用户信息" },
+          "403": { "description": "Framework Token 无效" }
+        }
+      }
+    },
+    "/api/endfield/card/detail": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取角色详情卡片",
+        "operationId": "getCardDetail",
+        "parameters": [
+          { "name": "roleId", "in": "query", "schema": { "type": "string" }, "description": "角色 ID（可选，自动从凭证获取）" },
+          { "name": "serverId", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "服务器 ID" }
+        ],
+        "responses": {
+          "200": { "description": "角色详情数据" }
+        }
+      }
+    },
+    "/api/endfield/attendance": {
+      "post": {
+        "tags": ["终末地数据"],
+        "summary": "终末地签到",
+        "operationId": "attendance",
+        "responses": {
+          "200": { "description": "签到成功" }
+        }
+      }
+    },
+    "/api/wiki/categories": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取主分类列表",
+        "operationId": "getWikiCategories",
+        "responses": {
+          "200": { "description": "分类列表（游戏百科/攻略辑/情报档案库）" }
+        }
+      }
+    },
+    "/api/wiki/items": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取条目列表",
+        "operationId": "getWikiItems",
+        "parameters": [
+          { "name": "main_type_id", "in": "query", "schema": { "type": "string" }, "description": "主分类 ID" },
+          { "name": "sub_type_id", "in": "query", "schema": { "type": "string" }, "description": "子分类 ID" },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "条目列表" }
+        }
+      }
+    },
+    "/api/wiki/search": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "全文搜索",
+        "operationId": "searchWiki",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "搜索关键词" },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "搜索结果" }
+        }
+      }
+    },
+    "/api/blueprints": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "蓝图列表",
+        "operationId": "getBlueprints",
+        "parameters": [
+          { "name": "output_item", "in": "query", "schema": { "type": "string" }, "description": "产出物 item_id（逗号分隔）" },
+          { "name": "base_region", "in": "query", "schema": { "type": "string" }, "description": "基地区域" },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "关键词搜索" },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "default": "-created_at" }, "description": "排序字段" },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "蓝图列表" }
+        }
+      },
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "发布蓝图",
+        "operationId": "createBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "blueprint_code"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "blueprint_code": { "type": "string" },
+                  "base_region": { "type": "string" },
+                  "server_region": { "type": "string", "enum": ["cn", "global"] },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "发布成功" }
+        }
+      }
+    },
+    "/api/blueprints/{id}": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "蓝图详情",
+        "operationId": "getBlueprintDetail",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "蓝图详情" },
+          "404": { "description": "蓝图不存在" }
+        }
+      }
+    },
+    "/api/blueprints/{id}/like": {
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "点赞/取消点赞",
+        "operationId": "toggleBlueprintLike",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "操作成功" }
+        }
+      }
+    },
+    "/api/blueprints/{id}/comments": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "评论列表",
+        "operationId": "getBlueprintComments",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "评论列表" }
+        }
+      },
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "发表评论",
+        "operationId": "createBlueprintComment",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content", "cap_token"],
+                "properties": {
+                  "content": { "type": "string", "description": "评论内容" },
+                  "cap_token": { "type": "string", "description": "Cap PoW 验证 Token" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "评论成功" }
+        }
+      }
+    },
+    "/api/endfield/gacha/records": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取已保存的抽卡记录",
+        "operationId": "getGachaRecords",
+        "parameters": [
+          { "name": "pool_type", "in": "query", "schema": { "type": "string" }, "description": "卡池类型筛选" }
+        ],
+        "responses": {
+          "200": { "description": "抽卡记录列表" }
+        }
+      }
+    },
+    "/api/endfield/gacha/fetch": {
+      "post": {
+        "tags": ["抽卡记录"],
+        "summary": "从官方 API 同步抽卡记录",
+        "operationId": "fetchGachaRecords",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_uid": { "type": "string", "description": "账号 UID（多账号时指定）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "同步任务已启动" }
+        }
+      }
+    },
+    "/api/endfield/gacha/global-stats": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "全服抽卡统计",
+        "operationId": "getGachaGlobalStats",
+        "description": "公开接口，返回全服用户的抽卡统计数据。",
+        "responses": {
+          "200": { "description": "全服统计数据" }
+        }
+      }
+    },
+    "/api/announcements": {
+      "get": {
+        "tags": ["公告"],
+        "summary": "获取公告列表",
+        "operationId": "getAnnouncements",
+        "parameters": [
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "公告列表" }
+        }
+      }
+    },
+    "/api/calc/all": {
+      "get": {
+        "tags": ["产线计算器"],
+        "summary": "获取全部计算器数据",
+        "operationId": "getCalcAll",
+        "description": "一次性获取所有物品、配方和设备数据（前端初始化用）。",
+        "responses": {
+          "200": { "description": "计算器全量数据" }
+        }
+      }
+    },
+    "/api/v1/subscription/plans": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取计划列表",
+        "operationId": "getSubscriptionPlans",
+        "security": [],
+        "responses": {
+          "200": { "description": "可用订阅计划列表" }
+        }
+      }
+    },
+    "/api/v1/subscription/status": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取订阅状态",
+        "operationId": "getSubscriptionStatus",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "当前订阅状态" }
+        }
+      }
+    },
+    "/api/v1/subscription/checkin": {
+      "post": {
+        "tags": ["订阅管理"],
+        "summary": "提交签到",
+        "operationId": "submitCheckin",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["challenge_id", "captcha_verify_param", "client_nonce", "timestamp", "sign"],
+                "properties": {
+                  "challenge_id": { "type": "string" },
+                  "captcha_verify_param": { "type": "string" },
+                  "client_nonce": { "type": "string" },
+                  "timestamp": { "type": "integer" },
+                  "sign": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "签到成功，返回获得配额和连续天数" }
+        }
+      }
+    },
+    "/api/v1/subscription/redemption/redeem": {
+      "post": {
+        "tags": ["订阅管理"],
+        "summary": "兑换兑换码",
+        "operationId": "redeemCode",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "cap_token"],
+                "properties": {
+                  "code": { "type": "string", "description": "兑换码" },
+                  "cap_token": { "type": "string", "description": "Cap PoW 验证 Token" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "兑换成功" }
+        }
+      }
+    },
+    "/api/v1/cap/challenge": {
+      "post": {
+        "tags": ["Cap 验证码"],
+        "summary": "创建 PoW 挑战",
+        "operationId": "createCapChallenge",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "返回 PoW 挑战参数",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "challenge": { "type": "object" },
+                        "token": { "type": "string" },
+                        "expires": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cap/redeem": {
+      "post": {
+        "tags": ["Cap 验证码"],
+        "summary": "验证 PoW 解答",
+        "operationId": "redeemCapChallenge",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token", "solutions"],
+                "properties": {
+                  "token": { "type": "string" },
+                  "solutions": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "验证成功，返回一次性验证 Token" }
+        }
+      }
+    }
+  }
+}

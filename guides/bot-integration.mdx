@@ -1,0 +1,132 @@
+---
+title: "机器人/服务端集成"
+description: "在 QQ 机器人、Discord Bot 或服务端应用中集成 Endfield API。"
+---
+
+## 概述
+
+本指南介绍如何在服务端应用（QQ 机器人、Discord Bot、自动化脚本等）中使用 Endfield API。
+
+## 准备工作
+
+<Steps>
+  <Step title="注册并登录">
+    前往 [协议终端](https://end.shallow.ink/login) 注册账号。
+  </Step>
+  <Step title="创建 API Key">
+    在 [开发者 → API 密钥](https://end.shallow.ink/dashboard/developer/apikeys) 页面创建密钥。
+  </Step>
+  <Step title="选择订阅计划">
+    根据调用量需求选择 [订阅计划](https://end.shallow.ink/dashboard/developer/subscription)。游戏数据查询接口需要 Pro 及以上。
+  </Step>
+</Steps>
+
+## 基础调用
+
+```python Python
+import requests
+
+API_BASE = "https://api.end.shallow.ink"
+API_KEY = "sk_your_api_key"
+
+headers = {
+    "X-API-Key": API_KEY,
+    "Content-Type": "application/json"
+}
+
+# 查询 Wiki
+response = requests.get(f"{API_BASE}/api/wiki/search", 
+    headers=headers, params={"q": "艾雅法拉"})
+data = response.json()
+print(data["data"])
+```
+
+```javascript Node.js
+const API_BASE = 'https://api.end.shallow.ink';
+const API_KEY = 'sk_your_api_key';
+
+async function queryAPI(endpoint, params = {}) {
+  const url = new URL(`${API_BASE}${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  
+  const response = await fetch(url, {
+    headers: { 'X-API-Key': API_KEY }
+  });
+  const data = await response.json();
+  if (data.code !== 0) throw new Error(data.message);
+  return data.data;
+}
+
+// 使用
+const wiki = await queryAPI('/api/wiki/search', { q: '艾雅法拉' });
+```
+
+## 多用户管理
+
+机器人通常需要管理多个用户的游戏绑定。使用 `user_identifier` 区分不同用户：
+
+### 绑定管理
+
+```python
+# 获取用户绑定列表
+bindings = requests.get(f"{API_BASE}/api/v1/bindings",
+    headers=headers,
+    params={"user_identifier": "qq_123456"})
+
+# 为用户创建绑定
+requests.post(f"{API_BASE}/api/v1/bindings",
+    headers=headers,
+    json={
+        "user_identifier": "qq_123456",
+        "framework_token": "user_framework_token"
+    })
+```
+
+### 查询游戏数据
+
+```python
+# 获取特定用户的游戏数据
+response = requests.get(f"{API_BASE}/api/endfield/user",
+    headers={
+        **headers,
+        "X-Framework-Token": user_framework_token
+    })
+```
+
+<Warning>
+  不同 API Key 之间的用户数据完全隔离。API Key A 创建的绑定，API Key B 无法访问。
+</Warning>
+
+## 错误处理
+
+```python
+def safe_query(endpoint, params=None):
+    try:
+        response = requests.get(f"{API_BASE}{endpoint}",
+            headers=headers, params=params, timeout=10)
+        data = response.json()
+        
+        if response.status_code == 429:
+            # 速率限制，等待后重试
+            time.sleep(2)
+            return safe_query(endpoint, params)
+        
+        if response.status_code == 403 and data.get("code") == 40301:
+            # 游戏凭证失效
+            return {"error": "游戏凭证已过期，请重新绑定"}
+        
+        if data["code"] != 0:
+            return {"error": data["message"]}
+        
+        return data["data"]
+    except requests.exceptions.Timeout:
+        return {"error": "请求超时"}
+```
+
+## 最佳实践
+
+1. **缓存响应**：Wiki 数据变化不频繁，建议缓存 10-30 分钟
+2. **批量请求**：减少请求频率，合理利用配额
+3. **指数退避**：遇到 429 时使用指数退避重试
+4. **安全存储**：API Key 不要硬编码在代码中，使用环境变量
+5. **监控用量**：定期通过 `/api/v1/subscription/usage` 检查配额消耗

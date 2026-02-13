@@ -1,0 +1,105 @@
+---
+title: "抽卡数据分析"
+description: "使用 Endfield API 获取和分析抽卡记录数据。"
+---
+
+## 概述
+
+Endfield API 提供完整的抽卡记录获取、全服统计和卡池分析功能。
+
+## 公开数据（无需 Framework Token）
+
+### 全服统计
+
+```bash
+curl https://api.end.shallow.ink/api/endfield/gacha/global-stats \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+返回全服用户的抽卡统计数据，包括各卡池的平均出货数、保底率等。
+
+### 卡池角色分布
+
+```bash
+curl https://api.end.shallow.ink/api/endfield/gacha/pool-chars \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+返回各卡池中 6★/5★/4★ 角色的出现概率和 UP 信息。
+
+## 个人数据（需要 Framework Token）
+
+### 同步抽卡记录
+
+```bash
+# 1. 获取可用账号列表
+curl https://api.end.shallow.ink/api/endfield/gacha/accounts \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "X-Framework-Token: your_framework_token"
+
+# 2. 同步抽卡记录（异步任务）
+curl -X POST https://api.end.shallow.ink/api/endfield/gacha/fetch \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "X-Framework-Token: your_framework_token" \
+  -d '{"account_uid": "081587252"}'
+
+# 3. 查询同步状态
+curl https://api.end.shallow.ink/api/endfield/gacha/sync/status \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "X-Framework-Token: your_framework_token"
+
+# 4. 获取已保存的记录
+curl https://api.end.shallow.ink/api/endfield/gacha/records \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "X-Framework-Token: your_framework_token"
+```
+
+### 认证链流程
+
+抽卡记录获取需要经过四层认证链：
+
+```
+HypergryphToken（登录时保存）
+    ↓ Grant API
+app_token
+    ↓ Bindings API
+绑定账号列表
+    ↓ 选择账号
+hgUid
+    ↓ U8Token API
+u8_token
+    ↓ Records API
+抽卡记录
+```
+
+<Note>
+  整个认证链由后端自动处理，开发者只需提供 Framework Token 即可。
+</Note>
+
+### 多账号处理
+
+用户可能绑定了多个游戏账号（官服 + B服），需要先获取账号列表再选择：
+
+```javascript
+const accounts = await fetchAPI('/api/endfield/gacha/accounts');
+if (accounts.need_select) {
+  // 让用户选择账号
+  const selected = await showAccountSelector(accounts.accounts);
+  await fetchAPI('/api/endfield/gacha/fetch', {
+    method: 'POST',
+    body: JSON.stringify({ account_uid: selected.uid })
+  });
+} else {
+  // 只有一个账号，直接同步
+  await fetchAPI('/api/endfield/gacha/fetch', { method: 'POST' });
+}
+```
+
+## 卡池类型
+
+| 类型 | 值 | 说明 |
+|------|-----|------|
+| 限定池 | `E_CharacterGachaPoolType_Special` | 特许寻访 |
+| 常驻池 | `E_CharacterGachaPoolType_Standard` | 基础寻访 |
+| 新手池 | `E_CharacterGachaPoolType_Beginner` | 启程寻访 |
+| 武器池 | 无 pool_type | 武器寻访 |

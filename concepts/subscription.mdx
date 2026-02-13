@@ -1,0 +1,100 @@
+---
+title: "订阅计划"
+description: "了解 Endfield API 的订阅计划体系、签到机制和量包系统。"
+---
+
+## 计划概览
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="user">
+    **免费**
+    - public 级接口
+    - 10 次/分钟
+    - 100 日配额 / 3,000 月配额
+    - 签到获取额外配额
+  </Card>
+  <Card title="Pro" icon="zap">
+    **¥19.90/月** | ¥199.00/年
+    - standard 级接口
+    - 60 次/分钟
+    - 5,000 日配额 / 150,000 月配额
+    - 签到配额优先消耗
+  </Card>
+  <Card title="Plus" icon="crown">
+    **¥49.90/月** | ¥499.00/年
+    - premium 级接口（全部）
+    - 无速率限制
+    - 无配额限制
+  </Card>
+</CardGroup>
+
+## 获取权限的三种方式
+
+### 1. 月付/年付订阅
+
+通过 [订阅管理](https://end.shallow.ink/dashboard/developer/subscription) 页面订阅 Pro 或 Plus 计划。
+
+### 2. 每日签到
+
+所有用户均可每日签到获取免费配额：
+
+| 连续签到天数 | 奖励配额 |
+|-------------|---------|
+| 1 天 | 200 |
+| 3 天 | 250 |
+| 7 天 | 350 |
+| 14 天 | 500 |
+| 30 天 | 800 |
+
+<Tip>
+  签到配额当日有效（23:59:59 过期）。Free 用户的签到配额可以临时访问 Pro (standard) 级接口。
+</Tip>
+
+### 3. 请求量包
+
+按次购买，所有用户均可使用：
+
+- 持有量包的 Free 用户可访问 standard 级接口
+- 量包配额在签到和计划配额之后消耗
+
+## 签到流程
+
+签到使用 Challenge-Response 机制 + 阿里云验证码防刷：
+
+```
+1. GET  /api/v1/subscription/checkin/challenge → 获取签到挑战
+2. 前端完成阿里云验证码 → 获得 captcha_verify_param
+3. 前端用 challenge 数据计算 HMAC-SHA256 签名
+4. POST /api/v1/subscription/checkin → 提交签到
+```
+
+签到成功后返回：
+```json
+{
+  "code": 0,
+  "data": {
+    "quota_awarded": 200,
+    "streak_days": 3,
+    "free_quota_remaining": 450
+  }
+}
+```
+
+## 兑换码
+
+管理员可创建兑换码，用户可兑换获取订阅时间或请求量包：
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/v1/subscription/redemption/redeem \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -H "Content-Type: application/json" \
+  -d '{"code": "ENDFIELD2026", "cap_token": "cap_xxx"}'
+```
+
+兑换码类型：
+- **通用码**：所有人可用，有总使用次数上限
+- **独享码**：每人限用一次
+
+## 支付方式
+
+支持支付宝、微信支付、QQ 钱包等主流支付方式，通过易支付集成。

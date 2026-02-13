@@ -1,0 +1,122 @@
+---
+title: "蓝图库集成"
+description: "使用蓝图库 API 实现蓝图浏览、搜索、发布和社区互动。"
+---
+
+## 概述
+
+蓝图库是 Endfield API 的社区功能模块，支持蓝图发布、搜索、点赞、评论和收藏。
+
+## 公开接口
+
+以下接口使用 UnifiedAuth（API Key / JWT / Anonymous Token 三选一）。
+
+### 蓝图列表
+
+```bash
+curl "https://api.end.shallow.ink/api/blueprints?sort=-likes_count&page=1&page_size=20" \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+### 筛选参数
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `output_item` | string | 产出物 item_id（逗号分隔） |
+| `input_material` | string | 输入原料名（逗号分隔） |
+| `base_region` | string | 基地区域 |
+| `base_location` | string | 子基地 |
+| `power_min` / `power_max` | int | 功率范围 |
+| `server_region` | string | 服务器区域（cn/global） |
+| `facility` | string | 设备 item_id（逗号分隔） |
+| `keyword` | string | 标题/描述关键词 |
+| `sort` | string | 排序字段 |
+| `page` / `page_size` | int | 分页 |
+
+### 排序方式
+
+- `-created_at`（默认）：最新发布
+- `likes_count`：最多点赞
+- `views_count`：最多浏览
+- `copies_count`：最多复制
+
+### 蓝图详情
+
+```bash
+curl https://api.end.shallow.ink/api/blueprints/{id} \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+### 评论列表
+
+```bash
+curl https://api.end.shallow.ink/api/blueprints/{id}/comments \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+## 需要登录的接口
+
+以下接口需要 Web JWT 认证。
+
+### 发布蓝图
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/blueprints \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "高效钢铁产线",
+    "description": "四号谷地钢铁自动化蓝图",
+    "blueprint_code": "BP:xxxxx",
+    "base_region": "四号谷地",
+    "base_location": "四号谷地主基地",
+    "server_region": "cn",
+    "output_items": [{"item_id": "123", "name": "钢铁"}],
+    "images": ["https://..."]
+  }'
+```
+
+### 点赞/取消点赞
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/blueprints/{id}/like \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+### 发表评论
+
+评论需要 Cap PoW 验证码防刷：
+
+```bash
+# 1. 获取 PoW 挑战
+curl -X POST https://api.end.shallow.ink/api/v1/cap/challenge
+
+# 2. 前端解算 SHA-256 PoW
+
+# 3. 兑换验证 Token
+curl -X POST https://api.end.shallow.ink/api/v1/cap/redeem \
+  -d '{"token": "...", "solutions": [...]}'
+
+# 4. 发表评论
+curl -X POST https://api.end.shallow.ink/api/blueprints/{id}/comments \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -d '{"content": "好用！", "cap_token": "cap_xxx"}'
+```
+
+## 图片上传
+
+蓝图图片通过七牛云对象存储上传：
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/blueprints/upload/image \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -F "file=@blueprint.png"
+```
+
+返回的 URL 是签名临时链接（私有空间）。
+
+## 审核机制
+
+- **文字审核**：AI 异步审核标题/描述/评论
+- **图片审核**：七牛云增量审核，回调通知
+- 审核未通过的蓝图不会出现在公开列表中

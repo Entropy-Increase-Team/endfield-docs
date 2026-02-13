@@ -1,0 +1,88 @@
+/* ============================================================
+   Endfield API Docs — Industrial Sci-Fi Custom Theme
+   Override Mintlify default styles to match the project aesthetic
+   ============================================================ */
+
+/* === Global Dark Mode Overrides === */
+:root {
+  --industrial-yellow: #d4a017;
+  --tech-cyan: #008fa6;
+}
+
+.dark {
+  --industrial-yellow: #FFD000;
+  --tech-cyan: #00F0FF;
+}
+
+/* === Body Background === */
+.dark body {
+  background: radial-gradient(
+    circle at 50% 0%,
+    #0a0a0c 0%,
+    #050505 60%,
+    #000000 100%
+  ) !important;
+  background-attachment: fixed;
+}
+
+/* === Selection Color === */
+::selection {
+  background-color: var(--industrial-yellow);
+  color: #000;
+}
+
+/* === Scrollbar Hide === */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* === Code Blocks — JetBrains Mono === */
+code, pre, .code-block, kbd {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+}
+
+/* === Embed Mode: Hide navbar & footer when ?embed=true === */
+body.embed-mode #navbar,
+body.embed-mode #header,
+body.embed-mode footer,
+body.embed-mode #footer,
+body.embed-mode .navbar-transition,
+body.embed-mode #banner {
+  display: none !important;
+}
+
+body.embed-mode #sidebar {
+  top: 0 !important;
+}
+
+body.embed-mode {
+  padding-top: 0 !important;
+}
+
+/* === Subtle Neon Glow on Sidebar Active Item === */
+.dark [data-active="true"] {
+  text-shadow: 0 0 8px rgba(255, 208, 0, 0.3);
+}
+
+/* === API Method Pills — Industrial Styling === */
+.dark .method-pill {
+  border-radius: 0 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* === Cards — Sharper edges === */
+.dark .card {
+  border-radius: 2px !important;
+}
+
+/* === Topbar CTA Button — Industrial Yellow === */
+.dark #topbar-cta-button {
+  border-radius: 0 !important;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}

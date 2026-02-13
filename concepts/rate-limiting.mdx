@@ -1,0 +1,81 @@
+---
+title: "速率限制与配额"
+description: "了解 Endfield API 的请求速率限制和配额管理机制。"
+---
+
+## 速率限制
+
+每个计划有不同的速率限制（每分钟请求数）：
+
+| 计划 | 速率限制 | 日配额 | 月配额 |
+|------|---------|--------|--------|
+| **Free** | 10 次/分钟 | 100 | 3,000 |
+| **Pro** | 60 次/分钟 | 5,000 | 150,000 |
+| **Plus** | 无限制 | 无限制 | 无限制 |
+
+## 响应头
+
+每个 API 响应都包含配额相关的响应头：
+
+| 响应头 | 说明 |
+|--------|------|
+| `X-Plan` | 当前计划名称 |
+| `X-Quota-Daily-Remaining` | 日配额剩余 |
+| `X-Quota-Monthly-Remaining` | 月配额剩余 |
+| `X-Paid-Quota-Remaining` | 付费量包剩余 |
+| `X-Free-Quota-Remaining` | 签到配额剩余 |
+| `X-Quota-Source` | 本次扣费来源 |
+
+## 配额消耗优先级
+
+系统按以下优先级消耗配额：
+
+<Steps>
+  <Step title="签到配额（免费）">
+    每日签到获得的免费配额优先消耗。签到配额当日 23:59:59 过期。
+  </Step>
+  <Step title="计划配额">
+    Pro/Plus 计划的日/月配额。Free 用户的日/月配额用于 public 级接口。
+  </Step>
+  <Step title="付费量包">
+    购买的请求量包，所有用户均可购买。持有量包的 Free 用户可访问 Pro 级接口。
+  </Step>
+</Steps>
+
+## 路由访问级别
+
+接口分为三个访问级别：
+
+| 级别 | 说明 | 示例 |
+|------|------|------|
+| **public** | 所有计划可访问 | Wiki、蓝图浏览、公告 |
+| **standard** | Pro 及以上 | 游戏数据查询 (`/api/endfield/*`) |
+| **premium** | Plus 专属 | 暂无 |
+
+<Tip>
+  Free 用户如果持有签到配额或付费量包，也可以临时访问 standard 级接口（提权机制）。
+</Tip>
+
+## 超出限制
+
+| HTTP 状态码 | 含义 |
+|------------|------|
+| `429` | 速率限制或配额耗尽 |
+| `403` | 计划级别不足（如 Free 访问 standard 接口且无量包） |
+
+建议实现指数退避重试策略：
+
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+    if (response.status === 429) {
+      const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+      await new Promise(r => setTimeout(r, delay));
+      continue;
+    }
+    return response;
+  }
+  throw new Error('请求超出重试次数');
+}
+```

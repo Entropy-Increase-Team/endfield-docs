@@ -1,0 +1,127 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "linden",
+  "name": "Endfield API",
+  "description": "终末地协议终端 API 文档 — 提供游戏数据查询、蓝图库、Wiki 百科、抽卡统计等功能的开放 API 平台。",
+  "colors": {
+    "primary": "#FFD000",
+    "light": "#FFD000",
+    "dark": "#d4a017"
+  },
+  "favicon": "/logo/favicon.svg",
+  "logo": {
+    "light": "/logo/logo-light.svg",
+    "dark": "/logo/logo-dark.svg",
+    "href": "https://end.shallow.ink"
+  },
+  "fonts": {
+    "heading": {
+      "family": "Space Grotesk",
+      "weight": 700
+    },
+    "body": {
+      "family": "DM Sans"
+    }
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": false
+  },
+  "background": {
+    "color": {
+      "dark": "#050505",
+      "light": "#f9f9f9"
+    }
+  },
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "vitesse-dark"
+      }
+    }
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "协议终端",
+        "href": "https://end.shallow.ink"
+      },
+      {
+        "type": "github",
+        "href": "https://github.com/your-org/endfield-api"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "控制台",
+      "href": "https://end.shallow.ink/dashboard"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/your-org/endfield-api"
+    }
+  },
+  "api": {
+    "openapi": "openapi.json",
+    "playground": {
+      "display": "interactive",
+      "proxy": true
+    },
+    "params": {
+      "expanded": "all"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "文档",
+        "groups": [
+          {
+            "group": "开始使用",
+            "icon": "rocket",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "核心概念",
+            "icon": "book-open",
+            "pages": [
+              "concepts/credentials",
+              "concepts/rate-limiting",
+              "concepts/error-codes",
+              "concepts/subscription"
+            ]
+          },
+          {
+            "group": "使用指南",
+            "icon": "compass",
+            "pages": [
+              "guides/web-integration",
+              "guides/bot-integration",
+              "guides/gacha-analysis",
+              "guides/blueprint-library"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API 参考",
+        "openapi": "openapi.json"
+      },
+      {
+        "tab": "更新日志",
+        "pages": [
+          "changelog"
+        ]
+      }
+    ]
+  }
+}

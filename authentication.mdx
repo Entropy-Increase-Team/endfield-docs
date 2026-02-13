@@ -1,0 +1,175 @@
+---
+title: "认证体系"
+description: "了解 Endfield API 的四种认证方式及其使用场景。"
+---
+
+Endfield API 采用**双层认证设计**：
+
+1. **接口认证**（三选一）：API Key / JWT / Anonymous Token — 证明你有权调用接口
+2. **游戏数据凭证**（可选）：Framework Token — 查询特定用户的游戏数据
+
+```
+┌─────────────────────────────────────────────┐
+│  接口认证（必须，三选一）                      │
+│  ├─ API Key        → 第三方开发者/机器人       │
+│  ├─ JWT            → Web 平台登录用户          │
+│  └─ Anonymous Token → 游客/未登录前端          │
+├─────────────────────────────────────────────┤
+│  游戏数据凭证（可选）                          │
+│  └─ Framework Token → 查询游戏数据时必须       │
+└─────────────────────────────────────────────┘
+```
+
+## API Key
+
+适用于第三方开发者、QQ 机器人、自动化脚本等服务端场景。
+
+### 获取方式
+
+在 [开发者 → API 密钥](https://end.shallow.ink/dashboard/developer/apikeys) 页面创建。
+
+### 使用方式
+
+```bash
+curl https://api.end.shallow.ink/api/wiki/categories \
+  -H "X-API-Key: sk_xxxxxxxxxxxx"
+```
+
+### 特性
+
+- 格式：`sk_` 前缀 + 随机字符串
+- **数据隔离**：不同 API Key 之间的用户绑定数据完全隔离
+- **域名白名单**：可配置允许调用的域名（用于前端集成）
+- **独立用量统计**：每个 Key 独立记录日/月请求次数
+
+<Warning>
+  API Key 仅在创建时显示一次，请妥善保存。如果遗失，需要重新创建。
+</Warning>
+
+## JWT Access Token
+
+适用于 Web 平台登录用户，支持账号密码和 OAuth 两种登录方式。
+
+### 获取方式
+
+<Tabs>
+  <Tab title="账号密码登录">
+    ```bash
+    curl -X POST https://api.end.shallow.ink/api/v1/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{
+        "account": "username_or_email",
+        "password": "your_password"
+      }'
+    ```
+
+    响应：
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "user": { "id": "...", "username": "..." },
+        "access_token": "eyJhbGciOi...",
+        "refresh_token": "eyJhbGciOi...",
+        "expires_in": 900
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="OAuth 登录">
+    支持 QQ 和 GitHub OAuth 登录：
+
+    ```
+    1. GET /api/v1/auth/oauth/qq → 获取授权 URL
+    2. 用户在 QQ 授权页完成授权
+    3. 后端回调 → 重定向到前端携带 Token
+    ```
+  </Tab>
+</Tabs>
+
+### 使用方式
+
+```bash
+curl https://api.end.shallow.ink/api/v1/user/profile \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+### Token 刷新
+
+Access Token 有效期 15 分钟，使用 Refresh Token 换取新的 Access Token：
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "eyJhbGciOi..."}'
+```
+
+## Anonymous Token
+
+适用于未登录的前端用户，自动获取，无需注册。
+
+### 获取方式
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/v1/auth/anonymous-token \
+  -H "Content-Type: application/json" \
+  -d '{"fingerprint": "设备指纹字符串（≥32字符）"}'
+```
+
+### 使用方式
+
+```bash
+curl https://api.end.shallow.ink/api/wiki/items \
+  -H "X-Anonymous-Token: anon_xxxxxxxxxxxx"
+```
+
+### 特性
+
+- 有效期：2 小时
+- 基于设备指纹生成，同一设备复用同一 Token
+- 仅能访问公开读接口（Wiki、蓝图浏览、全服统计等）
+
+## Framework Token
+
+**不是接口认证凭证**，而是游戏数据查询凭证。通过森空岛登录获取，用于查询特定用户的游戏数据。
+
+### 获取方式
+
+通过扫码登录或手机验证码登录获取：
+
+```bash
+# 1. 获取二维码
+curl https://api.end.shallow.ink/login/endfield/qr
+
+# 2. 轮询扫码状态
+curl "https://api.end.shallow.ink/login/endfield/qr/status?framework_token=xxx"
+
+# 3. 确认登录
+curl -X POST https://api.end.shallow.ink/login/endfield/qr/confirm \
+  -d '{"framework_token": "xxx"}'
+```
+
+### 使用方式
+
+与接口认证凭证**同时携带**：
+
+```bash
+curl https://api.end.shallow.ink/api/endfield/user \
+  -H "X-API-Key: sk_xxxxxxxxxxxx" \
+  -H "X-Framework-Token: your_framework_token"
+```
+
+<Note>
+  没有 Framework Token 也能调用接口（如 Wiki、蓝图库），但无法查询游戏数据。
+</Note>
+
+## 认证方式对比
+
+| 特性 | API Key | JWT | Anonymous Token |
+|------|---------|-----|-----------------|
+| 获取方式 | 控制台创建 | 登录获取 | 自动获取 |
+| 有效期 | 长期 | 15 分钟 | 2 小时 |
+| 适用场景 | 服务端/机器人 | Web 前端 | 游客浏览 |
+| 写操作 | ✅ | ✅ | ❌ |
+| 游戏数据 | ✅（需 FT） | ✅（需 FT） | ✅（需 FT） |
+| 数据隔离 | 按 Key 隔离 | 按用户 | 按设备 |

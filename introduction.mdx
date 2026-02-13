@@ -1,0 +1,86 @@
+---
+title: "Endfield API"
+description: "终末地协议终端开放 API 平台 — 提供游戏数据查询、蓝图库社区、Wiki 百科、抽卡统计等功能。"
+---
+
+## 概述
+
+**Endfield API** 是终末地协议终端的开放接口平台，为开发者和第三方客户端提供完整的终末地游戏数据服务。
+
+<CardGroup cols={2}>
+  <Card title="游戏数据查询" icon="gamepad-2">
+    角色详情、武器装备、签到、搜索等终末地游戏数据接口。
+  </Card>
+  <Card title="Wiki 百科" icon="book-open">
+    干员、武器、物品、活动等游戏百科数据，自动同步更新。
+  </Card>
+  <Card title="蓝图库社区" icon="layout-grid">
+    蓝图发布、搜索、点赞、评论、收藏，完整的社区功能。
+  </Card>
+  <Card title="抽卡统计" icon="sparkles">
+    个人抽卡记录同步、全服统计、卡池分析、模拟寻访。
+  </Card>
+</CardGroup>
+
+## 核心能力
+
+### 四级认证体系
+
+平台支持多种认证方式，适配不同使用场景：
+
+| 认证方式 | 请求头 | 适用场景 |
+|---------|--------|---------|
+| **Anonymous Token** | `X-Anonymous-Token` | 游客访问公开数据 |
+| **Framework Token** | `X-Framework-Token` | 游戏数据查询凭证 |
+| **JWT Access Token** | `Authorization: Bearer` | Web 平台登录用户 |
+| **API Key** | `X-API-Key` | 第三方开发者/机器人 |
+
+### 订阅计划
+
+| 计划 | 价格 | 速率限制 | 日配额 |
+|------|------|---------|--------|
+| **Free** | 免费 | 10 次/分钟 | 100 |
+| **Pro** | ¥19.90/月 | 60 次/分钟 | 5,000 |
+| **Plus** | ¥49.90/月 | 无限制 | 无限制 |
+
+<Tip>
+  签到可免费获得额外配额，签到配额可访问 Pro 级接口。
+</Tip>
+
+## API 基础地址
+
+```
+https://api.end.shallow.ink
+```
+
+所有 API 端点均以此为基础路径。
+
+## 响应格式
+
+所有接口统一返回 JSON 格式：
+
+```json 成功响应
+{
+  "code": 0,
+  "message": "成功",
+  "data": { ... }
+}
+```
+
+```json 错误响应
+{
+  "code": 400,
+  "message": "请求参数错误"
+}
+```
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="快速开始" icon="rocket" href="/quickstart">
+    5 分钟内完成第一次 API 调用。
+  </Card>
+  <Card title="认证指南" icon="shield" href="/authentication">
+    了解四种认证方式的详细用法。
+  </Card>
+</CardGroup>
