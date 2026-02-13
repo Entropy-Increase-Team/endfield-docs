@@ -84,8 +84,20 @@ resp, err := http.Get("https://api.end.shallow.ink/health")
   "code": 0,
   "message": "成功",
   "data": {
-    "status": "ok",
-    "version": "1.0.0"
+    "status": "healthy",
+    "timestamp": "2026-01-26T14:00:00+08:00",
+    "uptime": 123.45,
+    "memory": {
+      "alloc_mb": 5,
+      "total_alloc_mb": 10,
+      "sys_mb": 15
+    },
+    "runtime": {
+      "version": "go1.21.0",
+      "goroutines": 10,
+      "os": "windows",
+      "arch": "amd64"
+    }
   }
 }
 ```

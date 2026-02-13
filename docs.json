@@ -8,10 +8,10 @@
     "light": "#FFD000",
     "dark": "#b8860b"
   },
-  "favicon": "/logo/favicon.svg",
+  "favicon": "/logo/icon.svg",
   "logo": {
-    "light": "/logo/logo-light.svg",
-    "dark": "/logo/logo-dark.svg",
+    "light": "/logo/icon.svg",
+    "dark": "/logo/icon.svg",
     "href": "https://end.shallow.ink"
   },
   "fonts": {
@@ -26,13 +26,6 @@
   "appearance": {
     "default": "dark",
     "strict": false
-  },
-  "background": {
-    "color": {
-      "dark": "#050505",
-      "light": "#f9f9f9"
-    },
-    "decoration": "grid"
   },
   "styling": {
     "eyebrows": "breadcrumbs",

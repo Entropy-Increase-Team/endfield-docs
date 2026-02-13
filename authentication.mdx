@@ -125,9 +125,11 @@ curl https://api.end.shallow.ink/api/wiki/items \
 
 ### 特性
 
-- 有效期：2 小时
+- 有效期：2 小时（剩余时间 < 1 小时时自动刷新）
+- 每个 Token 最多 200 次请求
 - 基于设备指纹生成，同一设备复用同一 Token
 - 仅能访问公开读接口（Wiki、蓝图浏览、全服统计等）
+- 也可通过 `Authorization: Bearer anon_xxx` 方式携带
 
 ## Framework Token
 
@@ -135,19 +137,44 @@ curl https://api.end.shallow.ink/api/wiki/items \
 
 ### 获取方式
 
-通过扫码登录或手机验证码登录获取：
+通过扫码登录、手机验证码登录或 Cred 绑定获取：
 
-```bash
-# 1. 获取二维码
-curl https://api.end.shallow.ink/login/endfield/qr
+<Tabs>
+  <Tab title="扫码登录">
+    ```bash
+    # 1. 获取二维码
+    curl https://api.end.shallow.ink/login/endfield/qr
 
-# 2. 轮询扫码状态
-curl "https://api.end.shallow.ink/login/endfield/qr/status?framework_token=xxx"
+    # 2. 轮询扫码状态
+    curl "https://api.end.shallow.ink/login/endfield/qr/status?framework_token=xxx"
 
-# 3. 确认登录
-curl -X POST https://api.end.shallow.ink/login/endfield/qr/confirm \
-  -d '{"framework_token": "xxx"}'
-```
+    # 3. 确认登录
+    curl -X POST https://api.end.shallow.ink/login/endfield/qr/confirm \
+      -d '{"framework_token": "xxx"}'
+    ```
+  </Tab>
+  <Tab title="手机验证码">
+    ```bash
+    # 1. 发送验证码
+    curl -X POST https://api.end.shallow.ink/login/endfield/phone/send \
+      -H "Content-Type: application/json" \
+      -d '{"phone": "13800138000"}'
+
+    # 2. 验证并登录
+    curl -X POST https://api.end.shallow.ink/login/endfield/phone/verify \
+      -H "Content-Type: application/json" \
+      -d '{"phone": "13800138000", "code": "123456"}'
+    ```
+  </Tab>
+  <Tab title="Cred 绑定">
+    ```bash
+    # 直接使用森空岛 Cred 绑定
+    curl -X POST https://api.end.shallow.ink/login/endfield/cred \
+      -H "Content-Type: application/json" \
+      -d '{"cred": "your_skland_cred"}'
+    ```
+  </Tab>
+</Tabs>
 
 ### 使用方式
 

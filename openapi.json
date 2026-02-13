@@ -95,6 +95,9 @@
   "tags": [
     { "name": "健康检查", "description": "服务健康状态" },
     { "name": "认证", "description": "用户注册、登录、Token 管理" },
+    { "name": "游戏登录", "description": "森空岛扫码/手机/Cred 登录获取 Framework Token" },
+    { "name": "数据授权", "description": "第三方客户端获取用户 Framework Token" },
+    { "name": "开发者", "description": "API Key 管理与使用统计" },
     { "name": "用户", "description": "用户信息与绑定管理" },
     { "name": "终末地数据", "description": "游戏数据查询（需 Framework Token）" },
     { "name": "Wiki 百科", "description": "森空岛 Wiki 数据同步与查询" },
@@ -127,7 +130,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "status": { "type": "string", "example": "ok" }
+                        "status": { "type": "string", "example": "healthy" },
+                        "timestamp": { "type": "string", "example": "2026-01-26T14:00:00+08:00" },
+                        "uptime": { "type": "number", "example": 123.45 }
                       }
                     }
                   }
@@ -320,6 +325,348 @@
         }
       }
     },
+    "/api/v1/auth/send-code": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "发送邮箱验证码",
+        "operationId": "sendCode",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "type"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "type": { "type": "string", "enum": ["register", "reset_password", "bind_email"], "description": "验证码类型" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "验证码已发送（同一邮箱 60 秒内限一次）" }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "重置密码",
+        "operationId": "resetPassword",
+        "security": [],
+        "responses": { "200": { "description": "密码重置成功" } }
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "修改密码",
+        "operationId": "changePassword",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "密码修改成功" } }
+      }
+    },
+    "/api/v1/auth/set-username": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "设置用户名",
+        "operationId": "setUsername",
+        "security": [{ "BearerAuth": [] }],
+        "description": "OAuth 用户首次设置用户名（仅限一次，不可更改）。",
+        "responses": { "200": { "description": "用户名设置成功" } }
+      }
+    },
+    "/api/v1/auth/set-password": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "设置密码",
+        "operationId": "setPassword",
+        "security": [{ "BearerAuth": [] }],
+        "description": "OAuth 用户首次设置密码。",
+        "responses": { "200": { "description": "密码设置成功" } }
+      }
+    },
+    "/api/v1/auth/bind-email": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "绑定邮箱",
+        "operationId": "bindEmail",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "邮箱绑定成功" } }
+      }
+    },
+    "/api/v1/auth/link-oauth": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "绑定 OAuth 账号",
+        "operationId": "linkOAuth",
+        "security": [{ "BearerAuth": [] }],
+        "description": "将当前账号绑定到第三方 OAuth（QQ/GitHub）。",
+        "responses": { "200": { "description": "绑定成功或需要确认合并" } }
+      }
+    },
+    "/api/v1/auth/unlink-oauth": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "解绑 OAuth 账号",
+        "operationId": "unlinkOAuth",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "解绑成功" } }
+      }
+    },
+    "/api/v1/auth/check-username": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "检查用户名是否可用",
+        "operationId": "checkUsername",
+        "security": [],
+        "parameters": [
+          { "name": "username", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "用户名可用性" } }
+      }
+    },
+    "/api/v1/auth/check-email": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "检查邮箱是否可用",
+        "operationId": "checkEmail",
+        "security": [],
+        "parameters": [
+          { "name": "email", "in": "query", "required": true, "schema": { "type": "string", "format": "email" } }
+        ],
+        "responses": { "200": { "description": "邮箱可用性" } }
+      }
+    },
+    "/login/endfield/qr": {
+      "get": {
+        "tags": ["游戏登录"],
+        "summary": "获取扫码登录二维码",
+        "operationId": "getQRCode",
+        "security": [],
+        "responses": { "200": { "description": "返回 framework_token、scan_id、base64 二维码、过期时间" } }
+      }
+    },
+    "/login/endfield/qr/status": {
+      "get": {
+        "tags": ["游戏登录"],
+        "summary": "轮询扫码状态",
+        "operationId": "getQRStatus",
+        "security": [],
+        "parameters": [
+          { "name": "framework_token", "in": "query", "required": true, "schema": { "type": "string" }, "description": "会话令牌" }
+        ],
+        "responses": { "200": { "description": "扫码状态（pending/scanned/authed/done/expired/failed）" } }
+      }
+    },
+    "/login/endfield/qr/confirm": {
+      "post": {
+        "tags": ["游戏登录"],
+        "summary": "确认扫码登录",
+        "operationId": "confirmQRLogin",
+        "security": [],
+        "responses": { "200": { "description": "登录成功，返回 framework_token" } }
+      }
+    },
+    "/login/endfield/phone/send": {
+      "post": {
+        "tags": ["游戏登录"],
+        "summary": "发送手机验证码",
+        "operationId": "sendPhoneCode",
+        "security": [],
+        "responses": { "200": { "description": "验证码发送成功" } }
+      }
+    },
+    "/login/endfield/phone/verify": {
+      "post": {
+        "tags": ["游戏登录"],
+        "summary": "手机验证码登录",
+        "operationId": "verifyPhoneLogin",
+        "security": [],
+        "responses": { "200": { "description": "登录成功，返回 framework_token" } }
+      }
+    },
+    "/login/endfield/cred": {
+      "post": {
+        "tags": ["游戏登录"],
+        "summary": "Cred 直接绑定",
+        "operationId": "credBind",
+        "security": [],
+        "responses": { "200": { "description": "绑定成功，返回 framework_token" } }
+      }
+    },
+    "/login/endfield/cred/verify": {
+      "get": {
+        "tags": ["游戏登录"],
+        "summary": "验证 Cred 有效性",
+        "operationId": "verifyCred",
+        "security": [],
+        "parameters": [
+          { "name": "cred", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Cred 有效性" } }
+      }
+    },
+    "/api/v1/authorization/requests": {
+      "post": {
+        "tags": ["数据授权"],
+        "summary": "创建授权请求",
+        "operationId": "createAuthRequest",
+        "description": "客户端申请获取用户 Framework Token，返回授权 URL 供用户确认。",
+        "responses": { "200": { "description": "授权请求 ID 和授权 URL" } }
+      }
+    },
+    "/api/v1/authorization/requests/{request_id}": {
+      "get": {
+        "tags": ["数据授权"],
+        "summary": "获取授权请求详情",
+        "operationId": "getAuthRequest",
+        "parameters": [
+          { "name": "request_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "授权请求详情" } }
+      }
+    },
+    "/api/v1/authorization/requests/{request_id}/status": {
+      "get": {
+        "tags": ["数据授权"],
+        "summary": "轮询授权状态",
+        "operationId": "getAuthRequestStatus",
+        "description": "客户端轮询，授权成功时直接返回 framework_token。",
+        "parameters": [
+          { "name": "request_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "授权状态（pending/approved/rejected/expired/used）" } }
+      }
+    },
+    "/api/v1/authorization/requests/{request_id}/approve": {
+      "post": {
+        "tags": ["数据授权"],
+        "summary": "用户批准授权",
+        "operationId": "approveAuthRequest",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "request_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "授权成功" } }
+      }
+    },
+    "/api/v1/authorization/requests/{request_id}/reject": {
+      "post": {
+        "tags": ["数据授权"],
+        "summary": "用户拒绝授权",
+        "operationId": "rejectAuthRequest",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "request_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "已拒绝" } }
+      }
+    },
+    "/api/v1/authorization/clients": {
+      "get": {
+        "tags": ["数据授权"],
+        "summary": "获取已授权客户端列表",
+        "operationId": "getAuthClients",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "已授权客户端列表" } }
+      }
+    },
+    "/api/v1/authorization/clients/{client_id}": {
+      "delete": {
+        "tags": ["数据授权"],
+        "summary": "撤销客户端授权",
+        "operationId": "revokeAuthClient",
+        "security": [{ "BearerAuth": [] }],
+        "description": "撤销后系统刷新 Framework Token，旧 Token 立即失效。",
+        "parameters": [
+          { "name": "client_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "已撤销" } }
+      }
+    },
+    "/api/v1/authorization/clients/{client_id}/status": {
+      "get": {
+        "tags": ["数据授权"],
+        "summary": "检查授权状态",
+        "operationId": "checkAuthClientStatus",
+        "description": "客户端定期检查授权是否仍然有效。",
+        "parameters": [
+          { "name": "client_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "授权有效性和当前 framework_token" } }
+      }
+    },
+    "/api/v1/developer/api-keys": {
+      "get": {
+        "tags": ["开发者"],
+        "summary": "获取 API Key 列表",
+        "operationId": "getApiKeys",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "API Key 列表" } }
+      },
+      "post": {
+        "tags": ["开发者"],
+        "summary": "创建 API Key",
+        "operationId": "createApiKey",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "API Key 创建成功（仅显示一次）" } }
+      }
+    },
+    "/api/v1/developer/api-keys/{id}": {
+      "delete": {
+        "tags": ["开发者"],
+        "summary": "删除 API Key",
+        "operationId": "deleteApiKey",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "删除成功" } }
+      }
+    },
+    "/api/v1/developer/api-keys/{id}/reveal": {
+      "get": {
+        "tags": ["开发者"],
+        "summary": "查看完整 API Key",
+        "operationId": "revealApiKey",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "完整 API Key 值" } }
+      }
+    },
+    "/api/v1/developer/api-keys/{id}/regenerate": {
+      "post": {
+        "tags": ["开发者"],
+        "summary": "重新生成 API Key",
+        "operationId": "regenerateApiKey",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "新 Key 生成成功（仅显示一次）" } }
+      }
+    },
+    "/api/v1/developer/stats": {
+      "get": {
+        "tags": ["开发者"],
+        "summary": "获取使用统计",
+        "operationId": "getDeveloperStats",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "key_id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "API Key ID" },
+          { "name": "start_date", "in": "query", "schema": { "type": "string" }, "description": "开始日期 (YYYY-MM-DD)" },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" }, "description": "结束日期" },
+          { "name": "granularity", "in": "query", "schema": { "type": "string", "enum": ["hour", "day"], "default": "day" } }
+        ],
+        "responses": { "200": { "description": "调用量、错误数、延迟、订阅信息等统计" } }
+      }
+    },
     "/api/v1/user/profile": {
       "get": {
         "tags": ["用户"],
@@ -327,9 +674,17 @@
         "operationId": "getUserProfile",
         "security": [{ "BearerAuth": [] }],
         "responses": {
-          "200": { "description": "用户信息" },
+          "200": { "description": "用户信息（含已绑定 OAuth 列表）" },
           "401": { "description": "未登录" }
         }
+      },
+      "put": {
+        "tags": ["用户"],
+        "summary": "修改用户信息",
+        "operationId": "updateUserProfile",
+        "security": [{ "BearerAuth": [] }],
+        "description": "修改昵称或头像（头像 URL 须 HTTPS 且在白名单域名内）。",
+        "responses": { "200": { "description": "修改成功" } }
       }
     },
     "/api/v1/bindings": {
@@ -512,6 +867,26 @@
           "200": { "description": "蓝图详情" },
           "404": { "description": "蓝图不存在" }
         }
+      },
+      "put": {
+        "tags": ["蓝图库"],
+        "summary": "编辑蓝图",
+        "operationId": "updateBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "编辑成功（仅创建者可操作）" } }
+      },
+      "delete": {
+        "tags": ["蓝图库"],
+        "summary": "删除蓝图",
+        "operationId": "deleteBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "删除成功（仅创建者可操作）" } }
       }
     },
     "/api/blueprints/{id}/like": {
@@ -623,7 +998,10 @@
         "operationId": "getAnnouncements",
         "parameters": [
           { "$ref": "#/components/parameters/Page" },
-          { "$ref": "#/components/parameters/PageSize" }
+          { "$ref": "#/components/parameters/PageSize" },
+          { "name": "game_id", "in": "query", "schema": { "type": "integer" }, "description": "按游戏 ID 筛选（105=终末地）" },
+          { "name": "cate_id", "in": "query", "schema": { "type": "integer" }, "description": "按分类 ID 筛选（8=公告）" },
+          { "name": "view_kind", "in": "query", "schema": { "type": "integer" }, "description": "按类型筛选（1=视频, 3=图文）" }
         ],
         "responses": {
           "200": { "description": "公告列表" }
@@ -773,6 +1151,1010 @@
         "responses": {
           "200": { "description": "验证成功，返回一次性验证 Token" }
         }
+      }
+    },
+    "/api/endfield/gacha/accounts": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取可用账号列表",
+        "operationId": "getGachaAccounts",
+        "description": "获取当前用户绑定的游戏账号列表，用于多账号选择。",
+        "responses": {
+          "200": {
+            "description": "账号列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "need_select": { "type": "boolean", "description": "是否需要用户选择账号" },
+                        "accounts": { "type": "array", "items": { "type": "object" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/endfield/gacha/sync/status": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取同步任务状态",
+        "operationId": "getGachaSyncStatus",
+        "responses": {
+          "200": { "description": "同步任务状态" }
+        }
+      }
+    },
+    "/api/endfield/gacha/pool-chars": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取卡池角色分布",
+        "operationId": "getGachaPoolChars",
+        "description": "公开接口，返回各卡池中角色的出现概率和 UP 信息。",
+        "responses": {
+          "200": { "description": "卡池角色分布数据" }
+        }
+      }
+    },
+    "/api/announcements/latest": {
+      "get": {
+        "tags": ["公告"],
+        "summary": "获取最新公告",
+        "operationId": "getLatestAnnouncement",
+        "description": "获取最新一条公告，适用于客户端轮询。",
+        "responses": {
+          "200": { "description": "最新公告" }
+        }
+      }
+    },
+    "/api/announcements/{id}": {
+      "get": {
+        "tags": ["公告"],
+        "summary": "获取公告详情",
+        "operationId": "getAnnouncementDetail",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "公告详情" },
+          "404": { "description": "公告不存在" }
+        }
+      }
+    },
+    "/api/v1/subscription/usage": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取用量统计",
+        "operationId": "getSubscriptionUsage",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "当前用量统计（日/月配额消耗、API Key 用量等）" }
+        }
+      }
+    },
+    "/api/v1/subscription/checkin/challenge": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取签到挑战",
+        "operationId": "getCheckinChallenge",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "签到挑战参数",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "challenge_id": { "type": "string" },
+                        "timestamp": { "type": "integer" },
+                        "server_nonce": { "type": "string" },
+                        "sign_token": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscription/checkin/status": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取签到状态",
+        "operationId": "getCheckinStatus",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "今日签到状态和连续签到天数" }
+        }
+      }
+    },
+    "/api/v1/subscription/checkin/calendar": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取签到日历",
+        "operationId": "getCheckinCalendar",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "本月签到日历" }
+        }
+      }
+    },
+    "/api/v1/subscription/subscribe": {
+      "post": {
+        "tags": ["订阅管理"],
+        "summary": "发起订阅",
+        "operationId": "subscribe",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["plan", "period"],
+                "properties": {
+                  "plan": { "type": "string", "enum": ["pro", "plus"], "description": "计划名称" },
+                  "period": { "type": "string", "enum": ["monthly", "yearly"], "description": "付费周期" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "返回支付 URL" }
+        }
+      }
+    },
+    "/api/v1/subscription/quota-pack": {
+      "post": {
+        "tags": ["订阅管理"],
+        "summary": "购买请求量包",
+        "operationId": "buyQuotaPack",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["pack_id"],
+                "properties": {
+                  "pack_id": { "type": "string", "enum": ["pack_5000", "pack_20000", "pack_50000"], "description": "量包 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "返回支付 URL" }
+        }
+      }
+    },
+    "/api/v1/subscription/cancel": {
+      "post": {
+        "tags": ["订阅管理"],
+        "summary": "取消自动续费",
+        "operationId": "cancelSubscription",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "取消成功" }
+        }
+      }
+    },
+    "/api/v1/subscription/orders": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "获取订单历史",
+        "operationId": "getSubscriptionOrders",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": { "200": { "description": "订单列表（订阅购买/量包购买）" } }
+      }
+    },
+    "/api/v1/subscription/redemption/records": {
+      "get": {
+        "tags": ["订阅管理"],
+        "summary": "我的兑换记录",
+        "operationId": "getRedemptionRecords",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "兑换记录列表" }
+        }
+      }
+    },
+    "/api/friend/search": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "搜索玩家",
+        "operationId": "searchFriend",
+        "parameters": [
+          { "name": "uid", "in": "query", "schema": { "type": "string" }, "description": "玩家 UID 精确搜索" },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "昵称关键词搜索" }
+        ],
+        "responses": {
+          "200": { "description": "搜索结果列表" }
+        }
+      }
+    },
+    "/api/friend/detail": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "查询玩家详情",
+        "operationId": "getFriendDetail",
+        "parameters": [
+          { "name": "role_id", "in": "query", "schema": { "type": "integer" }, "description": "玩家 role_id（可选，不传则通过 Framework Token 自动解析）" }
+        ],
+        "responses": {
+          "200": { "description": "玩家详情（角色展示列表）" }
+        }
+      }
+    },
+    "/api/friend/char": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "查询角色面板数据",
+        "operationId": "getFriendChar",
+        "parameters": [
+          { "name": "role_id", "in": "query", "schema": { "type": "integer" }, "description": "玩家 role_id（可选，不传则通过 Framework Token 或 JWT 绑定自动获取）" },
+          { "name": "template_id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "角色模板 ID（如 chr_0012_avywen）" }
+        ],
+        "responses": {
+          "200": { "description": "角色面板数据" }
+        }
+      }
+    },
+    "/api/panel/sync": {
+      "post": {
+        "tags": ["好友查询"],
+        "summary": "触发面板同步",
+        "operationId": "syncPanel",
+        "security": [{ "BearerAuth": [] }],
+        "description": "触发全量面板同步（异步队列），每用户每分钟最多 2 次。",
+        "responses": {
+          "200": { "description": "同步任务已启动" },
+          "429": { "description": "同步过于频繁" }
+        }
+      }
+    },
+    "/api/panel/sync/status": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "查询同步进度",
+        "operationId": "getPanelSyncStatus",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "同步进度信息" }
+        }
+      }
+    },
+    "/api/panel/chars": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "获取已同步角色列表",
+        "operationId": "getPanelChars",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/Page" },
+          { "$ref": "#/components/parameters/PageSize" }
+        ],
+        "responses": {
+          "200": { "description": "角色列表" }
+        }
+      }
+    },
+    "/api/panel/char/{template_id}": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "获取指定角色完整面板",
+        "operationId": "getPanelCharDetail",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "template_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "角色完整面板数据" }
+        }
+      }
+    },
+    "/api/bili-wiki/operators": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取干员列表",
+        "operationId": "getBiliWikiOperators",
+        "responses": {
+          "200": { "description": "干员列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/operators/{name}": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取干员详情",
+        "operationId": "getBiliWikiOperatorDetail",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" }, "description": "干员名称" }
+        ],
+        "responses": {
+          "200": { "description": "干员详情" },
+          "404": { "description": "干员不存在" }
+        }
+      }
+    },
+    "/api/bili-wiki/weapons": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取武器列表",
+        "operationId": "getBiliWikiWeapons",
+        "responses": {
+          "200": { "description": "武器列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/weapons/{name}": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取武器详情",
+        "operationId": "getBiliWikiWeaponDetail",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" }, "description": "武器名称" }
+        ],
+        "responses": {
+          "200": { "description": "武器详情" },
+          "404": { "description": "武器不存在" }
+        }
+      }
+    },
+    "/api/bili-wiki/items": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取物品列表",
+        "operationId": "getBiliWikiItems",
+        "responses": {
+          "200": { "description": "物品列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/items/{name}": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取物品详情",
+        "operationId": "getBiliWikiItemDetail",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" }, "description": "物品名称" }
+        ],
+        "responses": {
+          "200": { "description": "物品详情" },
+          "404": { "description": "物品不存在" }
+        }
+      }
+    },
+    "/api/bili-wiki/equipments": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取装备列表",
+        "operationId": "getBiliWikiEquipments",
+        "responses": {
+          "200": { "description": "装备列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/devices": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取设备列表",
+        "operationId": "getBiliWikiDevices",
+        "responses": {
+          "200": { "description": "设备列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/enemies": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取敌对单位列表",
+        "operationId": "getBiliWikiEnemies",
+        "responses": {
+          "200": { "description": "敌对单位列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/activities": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取活动列表",
+        "operationId": "getBiliWikiActivities",
+        "description": "获取特许寻访和武库申领等活动信息。",
+        "responses": {
+          "200": { "description": "活动列表" }
+        }
+      }
+    },
+    "/api/bili-wiki/search": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "全文搜索",
+        "operationId": "searchBiliWiki",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "搜索关键词" }
+        ],
+        "responses": {
+          "200": { "description": "搜索结果" }
+        }
+      }
+    },
+    "/api/bili-wiki/stats": {
+      "get": {
+        "tags": ["B站 Wiki"],
+        "summary": "获取统计信息",
+        "operationId": "getBiliWikiStats",
+        "responses": {
+          "200": { "description": "各分类数据统计" }
+        }
+      }
+    },
+    "/api/blueprint/data": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "查询蓝图解析数据",
+        "operationId": "getBlueprintData",
+        "parameters": [
+          { "name": "code", "in": "query", "required": true, "schema": { "type": "string" }, "description": "蓝图码" }
+        ],
+        "responses": {
+          "200": { "description": "蓝图解析数据（设备、产线信息等）" },
+          "404": { "description": "蓝图码未找到" }
+        }
+      }
+    },
+    "/api/blueprints/upload/image": {
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "上传蓝图图片",
+        "operationId": "uploadBlueprintImage",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "图片文件" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "上传成功，返回图片 URL" }
+        }
+      }
+    },
+    "/api/wiki/items/{id}": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取条目详情",
+        "operationId": "getWikiItemDetail",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "条目 ID" }
+        ],
+        "responses": {
+          "200": { "description": "条目详情" },
+          "404": { "description": "条目不存在" }
+        }
+      }
+    },
+    "/api/endfield/search": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "搜索玩家",
+        "operationId": "searchEndfieldPlayer",
+        "parameters": [
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "按昵称搜索（支持 名字#短ID 格式）" },
+          { "name": "uid", "in": "query", "schema": { "type": "string" }, "description": "按平台 uid 精确搜索" }
+        ],
+        "responses": { "200": { "description": "搜索结果" } }
+      }
+    },
+    "/api/endfield/binding": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取终末地绑定信息",
+        "operationId": "getEndfieldBinding",
+        "responses": { "200": { "description": "绑定的游戏账号列表" } }
+      }
+    },
+    "/api/endfield/card/char": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取干员详情",
+        "operationId": "getCharDetail",
+        "parameters": [
+          { "name": "instId", "in": "query", "required": true, "schema": { "type": "string" }, "description": "干员实例 ID" },
+          { "name": "roleId", "in": "query", "schema": { "type": "string" }, "description": "角色 ID（可选，自动从凭证获取）" },
+          { "name": "serverId", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "服务器 ID" }
+        ],
+        "responses": { "200": { "description": "干员详情数据" } }
+      }
+    },
+    "/api/endfield/search/chars": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "搜索干员列表",
+        "operationId": "searchEndfieldChars",
+        "responses": { "200": { "description": "干员列表" } }
+      }
+    },
+    "/api/endfield/search/weapons": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "搜索武器列表",
+        "operationId": "searchEndfieldWeapons",
+        "responses": { "200": { "description": "武器列表" } }
+      }
+    },
+    "/api/endfield/search/equipments": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "搜索装备列表",
+        "operationId": "searchEndfieldEquipments",
+        "responses": { "200": { "description": "装备列表" } }
+      }
+    },
+    "/api/endfield/search/tactical-items": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "搜索战术道具列表",
+        "operationId": "searchEndfieldTacticalItems",
+        "responses": { "200": { "description": "战术道具列表" } }
+      }
+    },
+    "/api/endfield/stamina": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取体力信息",
+        "operationId": "getStamina",
+        "parameters": [
+          { "name": "roleId", "in": "query", "schema": { "type": "string" }, "description": "角色 ID（可选）" },
+          { "name": "serverId", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "服务器 ID" }
+        ],
+        "responses": { "200": { "description": "体力与每日任务信息" } }
+      }
+    },
+    "/api/endfield/note": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取便签信息",
+        "operationId": "getNote",
+        "responses": { "200": { "description": "角色详情卡片完整数据" } }
+      }
+    },
+    "/api/endfield/domain": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取地区建设信息",
+        "operationId": "getDomain",
+        "responses": { "200": { "description": "地区建设与聚落信息" } }
+      }
+    },
+    "/api/endfield/spaceship": {
+      "get": {
+        "tags": ["终末地数据"],
+        "summary": "获取帝江号建设信息",
+        "operationId": "getSpaceship",
+        "responses": { "200": { "description": "帝江号房间与角色信息" } }
+      }
+    },
+    "/api/wiki/categories/{main_type_id}/sub": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取子分类列表",
+        "operationId": "getWikiSubCategories",
+        "parameters": [
+          { "name": "main_type_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "主分类 ID（1=游戏百科, 2=攻略辑, 3=情报库）" }
+        ],
+        "responses": { "200": { "description": "子分类列表（含条目数量）" } }
+      }
+    },
+    "/api/wiki/char-pools": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取角色卡池",
+        "operationId": "getWikiCharPools",
+        "responses": { "200": { "description": "角色卡池列表（含 UP 角色信息、时间戳）" } }
+      }
+    },
+    "/api/wiki/activities": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取活动列表",
+        "operationId": "getWikiActivities",
+        "responses": { "200": { "description": "活动列表" } }
+      }
+    },
+    "/api/wiki/stickers": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取表情包列表",
+        "operationId": "getWikiStickers",
+        "responses": { "200": { "description": "表情包分类及图片列表" } }
+      }
+    },
+    "/api/wiki/stats": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取统计信息",
+        "operationId": "getWikiStats",
+        "responses": { "200": { "description": "各分类数据统计及最近同步信息" } }
+      }
+    },
+    "/api/wiki/facilities": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取设备列表",
+        "operationId": "getWikiFacilities",
+        "responses": { "200": { "description": "设备列表（含功耗/等级）" } }
+      }
+    },
+    "/api/wiki/facilities/{item_id}": {
+      "get": {
+        "tags": ["Wiki 百科"],
+        "summary": "获取设备详情",
+        "operationId": "getWikiFacilityDetail",
+        "parameters": [
+          { "name": "item_id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "设备条目 ID" }
+        ],
+        "responses": { "200": { "description": "设备详情" } }
+      }
+    },
+    "/api/v1/bindings/{id}": {
+      "delete": {
+        "tags": ["用户"],
+        "summary": "删除绑定",
+        "operationId": "deleteBinding",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "删除成功" } }
+      }
+    },
+    "/api/v1/bindings/{id}/primary": {
+      "post": {
+        "tags": ["用户"],
+        "summary": "设置主绑定",
+        "operationId": "setPrimaryBinding",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "设置成功" } }
+      }
+    },
+    "/api/v1/bindings/{id}/refresh": {
+      "post": {
+        "tags": ["用户"],
+        "summary": "刷新绑定凭证",
+        "operationId": "refreshBinding",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "刷新成功" } }
+      }
+    },
+    "/api/blueprints/meta": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "获取蓝图元数据",
+        "operationId": "getBlueprintMeta",
+        "responses": { "200": { "description": "基地选项、输入原料、排序字段等枚举数据" } }
+      }
+    },
+    "/api/blueprints/{id}/copy": {
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "记录蓝图码复制",
+        "operationId": "copyBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "记录成功（同一用户/IP 每小时去重）" } }
+      }
+    },
+    "/api/blueprints/{id}/favorite": {
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "收藏蓝图到收藏夹",
+        "operationId": "favoriteBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "收藏成功" } }
+      },
+      "delete": {
+        "tags": ["蓝图库"],
+        "summary": "取消收藏",
+        "operationId": "unfavoriteBlueprint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "collection_id", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "取消收藏成功" } }
+      }
+    },
+    "/api/blueprints/comments/{comment_id}": {
+      "put": {
+        "tags": ["蓝图库"],
+        "summary": "编辑评论",
+        "operationId": "updateComment",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "comment_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "编辑成功（仅作者可操作）" } }
+      },
+      "delete": {
+        "tags": ["蓝图库"],
+        "summary": "删除评论",
+        "operationId": "deleteComment",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "comment_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "软删除成功" } }
+      }
+    },
+    "/api/blueprints/my/collections": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "我的收藏夹列表",
+        "operationId": "getMyCollections",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "收藏夹列表（自动确保默认收藏夹存在）" } }
+      },
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "创建收藏夹",
+        "operationId": "createCollection",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "创建成功（每人最多50个）" } }
+      }
+    },
+    "/api/blueprints/my/collections/{id}": {
+      "put": {
+        "tags": ["蓝图库"],
+        "summary": "编辑收藏夹",
+        "operationId": "updateCollection",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "编辑成功" } }
+      },
+      "delete": {
+        "tags": ["蓝图库"],
+        "summary": "删除收藏夹",
+        "operationId": "deleteCollection",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "删除成功（默认收藏夹不可删）" } }
+      }
+    },
+    "/api/blueprints/collections/public/{id}": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "查看收藏夹详情",
+        "operationId": "getPublicCollection",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "收藏夹详情及蓝图列表" } }
+      }
+    },
+    "/api/blueprints/collections/{id}/like": {
+      "post": {
+        "tags": ["蓝图库"],
+        "summary": "收藏夹点赞/取消点赞",
+        "operationId": "likeCollection",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Toggle 操作" } }
+      }
+    },
+    "/api/blueprints/creators/{user_id}": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "创作者主页",
+        "operationId": "getCreatorBlueprints",
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "default": "-created_at" } }
+        ],
+        "responses": { "200": { "description": "创作者已发布蓝图列表" } }
+      }
+    },
+    "/api/blueprints/my/list": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "我的蓝图",
+        "operationId": "getMyBlueprints",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" }, "description": "筛选状态（draft/published）" }
+        ],
+        "responses": { "200": { "description": "我的蓝图列表（含草稿）" } }
+      }
+    },
+    "/api/blueprints/my/liked": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "我点赞的蓝图",
+        "operationId": "getMyLikedBlueprints",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "我点赞的蓝图列表" } }
+      }
+    },
+    "/api/blueprints/image/sign": {
+      "get": {
+        "tags": ["蓝图库"],
+        "summary": "获取图片签名 URL",
+        "operationId": "signBlueprintImage",
+        "parameters": [
+          { "name": "key", "in": "query", "required": true, "schema": { "type": "string" }, "description": "图片 object key" }
+        ],
+        "responses": { "200": { "description": "签名后的临时访问 URL" } }
+      }
+    },
+    "/api/calc/items": {
+      "get": {
+        "tags": ["产线计算器"],
+        "summary": "获取产线计算物品",
+        "operationId": "getCalcItems",
+        "responses": { "200": { "description": "参与有效配方的物品列表" } }
+      }
+    },
+    "/api/calc/recipes": {
+      "get": {
+        "tags": ["产线计算器"],
+        "summary": "获取产线计算配方",
+        "operationId": "getCalcRecipes",
+        "responses": { "200": { "description": "有效配方列表（含设备、输入输出、制作时间）" } }
+      }
+    },
+    "/api/calc/facilities": {
+      "get": {
+        "tags": ["产线计算器"],
+        "summary": "获取产线计算设备",
+        "operationId": "getCalcFacilities",
+        "responses": { "200": { "description": "所有设备列表（含功耗/等级）" } }
+      }
+    },
+    "/api/calc/production-list": {
+      "get": {
+        "tags": ["产线计算器"],
+        "summary": "获取生产列表",
+        "operationId": "getProductionList",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "当前用户的生产列表" } }
+      },
+      "post": {
+        "tags": ["产线计算器"],
+        "summary": "保存生产列表",
+        "operationId": "saveProductionList",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "整体覆盖保存成功" } }
+      }
+    },
+    "/api/panel/chars/all": {
+      "get": {
+        "tags": ["好友查询"],
+        "summary": "获取所有已同步角色完整数据",
+        "operationId": "getPanelCharsAll",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "所有已同步角色的完整面板数据（分页）" } }
+      }
+    },
+    "/api/endfield/gacha/stats": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取个人抽卡统计",
+        "operationId": "getGachaStats",
+        "responses": { "200": { "description": "按卡池分类的抽卡统计数据" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/pools": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取模拟可选卡池",
+        "operationId": "getSimulatePools",
+        "responses": { "200": { "description": "可模拟的卡池列表（含 UP 信息）" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/rules": {
+      "get": {
+        "tags": ["抽卡记录"],
+        "summary": "获取卡池规则",
+        "operationId": "getSimulateRules",
+        "parameters": [
+          { "name": "pool_type", "in": "query", "schema": { "type": "string", "default": "limited" }, "description": "卡池类型（limited/weapon/standard）" }
+        ],
+        "responses": { "200": { "description": "保底、概率等规则参数" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/single": {
+      "post": {
+        "tags": ["抽卡记录"],
+        "summary": "模拟单抽",
+        "operationId": "simulateSingle",
+        "responses": { "200": { "description": "单次抽卡结果及状态" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/ten": {
+      "post": {
+        "tags": ["抽卡记录"],
+        "summary": "模拟十连",
+        "operationId": "simulateTen",
+        "responses": { "200": { "description": "十连抽卡结果及状态" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/free-ten": {
+      "post": {
+        "tags": ["抽卡记录"],
+        "summary": "模拟免费十连",
+        "operationId": "simulateFreeTen",
+        "description": "仅限定角色池，每30抽送1次，不计入保底。",
+        "responses": { "200": { "description": "免费十连结果" } }
+      }
+    },
+    "/api/endfield/gacha/simulate/batch": {
+      "post": {
+        "tags": ["抽卡记录"],
+        "summary": "批量模拟（统计分析）",
+        "operationId": "simulateBatch",
+        "description": "大规模模拟统计，分析出货概率分布。最多 10000 次迭代。",
+        "responses": { "200": { "description": "统计分析结果及出货分布" } }
+      }
+    },
+    "/api/proxy/image": {
+      "get": {
+        "tags": ["健康检查"],
+        "summary": "图片代理",
+        "operationId": "proxyImage",
+        "description": "绕过森空岛 CDN 防盗链，仅允许白名单域名。",
+        "parameters": [
+          { "name": "url", "in": "query", "required": true, "schema": { "type": "string" }, "description": "URL 编码后的原始图片地址" }
+        ],
+        "responses": { "200": { "description": "图片二进制数据" } }
       }
     }
   }

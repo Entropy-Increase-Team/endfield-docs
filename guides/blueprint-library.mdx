@@ -29,6 +29,7 @@ curl "https://api.end.shallow.ink/api/blueprints?sort=-likes_count&page=1&page_s
 | `power_min` / `power_max` | int | 功率范围 |
 | `server_region` | string | 服务器区域（cn/global） |
 | `facility` | string | 设备 item_id（逗号分隔） |
+| `creator_id` | string | 作者用户 ID |
 | `keyword` | string | 标题/描述关键词 |
 | `sort` | string | 排序字段 |
 | `page` / `page_size` | int | 分页 |
@@ -103,9 +104,80 @@ curl -X POST https://api.end.shallow.ink/api/blueprints/{id}/comments \
   -d '{"content": "好用！", "cap_token": "cap_xxx"}'
 ```
 
+### 编辑/删除蓝图
+
+仅创建者可操作：
+
+```bash
+# 编辑（PUT，字段可选，只传需更新的）
+curl -X PUT https://api.end.shallow.ink/api/blueprints/{id} \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -d '{"title": "新标题"}'
+
+# 删除（自动清理关联点赞/评论/收藏/浏览记录）
+curl -X DELETE https://api.end.shallow.ink/api/blueprints/{id} \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+### 记录蓝图码复制
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/blueprints/{id}/copy \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+同一用户/IP 对同一蓝图每小时只计一次。
+
+### 收藏夹管理
+
+```bash
+# 获取收藏夹列表（自动确保默认收藏夹存在）
+curl https://api.end.shallow.ink/api/blueprints/my/collections \
+  -H "Authorization: Bearer eyJhbGciOi..."
+
+# 创建收藏夹（每人最多 50 个）
+curl -X POST https://api.end.shallow.ink/api/blueprints/my/collections \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -d '{"title": "高效产线", "is_public": true}'
+
+# 收藏蓝图到收藏夹
+curl -X POST https://api.end.shallow.ink/api/blueprints/{id}/favorite \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -d '{"collection_id": "收藏夹ID"}'
+
+# 取消收藏
+curl -X DELETE "https://api.end.shallow.ink/api/blueprints/{id}/favorite?collection_id=xxx" \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+### 创作者主页 & 我的蓝图
+
+```bash
+# 查看某用户的蓝图
+curl "https://api.end.shallow.ink/api/blueprints/creators/{user_id}?sort=-created_at" \
+  -H "X-API-Key: sk_your_api_key"
+
+# 我的蓝图（含草稿）
+curl "https://api.end.shallow.ink/api/blueprints/my/list?status=published" \
+  -H "Authorization: Bearer eyJhbGciOi..."
+
+# 我点赞的蓝图
+curl https://api.end.shallow.ink/api/blueprints/my/liked \
+  -H "Authorization: Bearer eyJhbGciOi..."
+```
+
+### 蓝图元数据
+
+获取基地选项、输入原料、排序字段等枚举数据：
+
+```bash
+curl https://api.end.shallow.ink/api/blueprints/meta \
+  -H "X-API-Key: sk_your_api_key"
+```
+
 ## 图片上传
 
-蓝图图片通过七牛云对象存储上传：
+蓝图图片通过对象存储上传（私有空间，最大 10MB，仅 jpg/png/webp）：
 
 ```bash
 curl -X POST https://api.end.shallow.ink/api/blueprints/upload/image \
@@ -113,10 +185,17 @@ curl -X POST https://api.end.shallow.ink/api/blueprints/upload/image \
   -F "file=@blueprint.png"
 ```
 
-返回的 URL 是签名临时链接（私有空间）。
+返回 `key`（对象存储 key）和 `url`（签名临时链接）。展示时后端自动将 key 签名为临时 URL。
+
+也可手动获取签名 URL：
+
+```bash
+curl "https://api.end.shallow.ink/api/blueprints/image/sign?key=blueprints/2026/02/xxx.jpg" \
+  -H "X-API-Key: sk_your_api_key"
+```
 
 ## 审核机制
 
 - **文字审核**：AI 异步审核标题/描述/评论
-- **图片审核**：七牛云增量审核，回调通知
+- **图片审核**：增量审核，回调通知
 - 审核未通过的蓝图不会出现在公开列表中
