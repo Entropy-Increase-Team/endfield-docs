@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 36">
-  <text x="0" y="26" font-family="'Space Grotesk', sans-serif" font-size="22" font-weight="700" fill="#d4a017">Endfield</text>
-  <text x="108" y="26" font-family="'JetBrains Mono', monospace" font-size="14" fill="#999999"> API</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36">
+  <!-- Corner bracket decoration -->
+  <path d="M1 8 L1 1 L8 1" fill="none" stroke="#b8860b" stroke-width="1.2" opacity="0.35"/>
+  <path d="M1 28 L1 35 L8 35" fill="none" stroke="#b8860b" stroke-width="1.2" opacity="0.35"/>
+  <!-- Wordmark -->
+  <text x="14" y="25" font-family="'Space Grotesk', system-ui, sans-serif" font-size="20" font-weight="700" fill="#111111" letter-spacing="-0.5">ENDFIELD</text>
+  <!-- Divider -->
+  <line x1="140" y1="10" x2="140" y2="26" stroke="#d4a017" stroke-width="1" opacity="0.3"/>
+  <!-- API badge -->
+  <text x="148" y="24" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="500" fill="#71717a" letter-spacing="2">API</text>
 </svg>

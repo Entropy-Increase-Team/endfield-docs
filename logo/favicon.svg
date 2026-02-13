@@ -1,4 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFD000"/>
+      <stop offset="100%" stop-color="#d4a017"/>
+    </linearGradient>
+  </defs>
   <rect width="32" height="32" fill="#050505"/>
-  <text x="16" y="22" font-family="monospace" font-size="18" font-weight="bold" fill="#FFD000" text-anchor="middle">E</text>
+  <!-- Corner brackets -->
+  <path d="M2 8 L2 2 L8 2" fill="none" stroke="#FFD000" stroke-width="1.5" opacity="0.6"/>
+  <path d="M24 2 L30 2 L30 8" fill="none" stroke="#FFD000" stroke-width="1.5" opacity="0.6"/>
+  <path d="M2 24 L2 30 L8 30" fill="none" stroke="#FFD000" stroke-width="1.5" opacity="0.6"/>
+  <path d="M24 30 L30 30 L30 24" fill="none" stroke="#FFD000" stroke-width="1.5" opacity="0.6"/>
+  <!-- E letterform — industrial block style -->
+  <path d="M10 9 L22 9 L22 12 L13 12 L13 14.5 L20 14.5 L20 17.5 L13 17.5 L13 20 L22 20 L22 23 L10 23 Z" fill="url(#g)"/>
 </svg>

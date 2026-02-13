@@ -1,20 +1,49 @@
-/* ============================================================
-   Endfield API Docs — Industrial Sci-Fi Custom Theme
-   Override Mintlify default styles to match the project aesthetic
-   ============================================================ */
+/* ================================================================
+   Endfield API Docs — Industrial Sci-Fi Theme
+   Strict match with Endfield-Web/DESIGN_SYSTEM.md
+   Core: Sharp edges, Industrial Yellow/Tech Cyan, HUD aesthetic
+   ================================================================ */
 
-/* === Global Dark Mode Overrides === */
+/* ========== 1. Design System Variables ========== */
+
 :root {
-  --industrial-yellow: #d4a017;
-  --tech-cyan: #008fa6;
+  --ef-primary: #d4a017;
+  --ef-primary-foreground: #000000;
+  --ef-secondary: #008fa6;
+  --ef-background: #f9f9f9;
+  --ef-foreground: #111111;
+  --ef-muted: #f4f4f4;
+  --ef-muted-foreground: #71717a;
+  --ef-border: #e2e2e2;
+  --ef-border-subtle: rgba(0, 0, 0, 0.08);
+  --ef-card: rgba(255, 255, 255, 0.8);
+  --ef-card-foreground: #111111;
+  --ef-accent: #c49102;
+  --ef-destructive: #ff3333;
 }
 
 .dark {
-  --industrial-yellow: #FFD000;
-  --tech-cyan: #00F0FF;
+  --ef-primary: #FFD000;
+  --ef-primary-foreground: #000000;
+  --ef-secondary: #00F0FF;
+  --ef-background: #050505;
+  --ef-foreground: #ffffff;
+  --ef-muted: #27272a;
+  --ef-muted-foreground: #a1a1aa;
+  --ef-border: rgba(255, 255, 255, 0.1);
+  --ef-border-subtle: rgba(255, 255, 255, 0.05);
+  --ef-card: rgba(255, 255, 255, 0.02);
+  --ef-card-foreground: #ffffff;
+  --ef-accent: #ffe600;
+  --ef-destructive: #ff3333;
 }
 
-/* === Body Background === */
+/* ========== 2. Body & Background ========== */
+
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 .dark body {
   background: radial-gradient(
     circle at 50% 0%,
@@ -25,26 +54,299 @@
   background-attachment: fixed;
 }
 
-/* === Selection Color === */
-::selection {
-  background-color: var(--industrial-yellow);
-  color: #000;
+/* Light mode: clean industrial white */
+:root:not(.dark) body {
+  background-color: #f9f9f9 !important;
 }
 
-/* === Scrollbar Hide === */
+/* ========== 3. Selection ========== */
+
+::selection {
+  background-color: var(--ef-primary);
+  color: var(--ef-primary-foreground);
+}
+
+::-moz-selection {
+  background-color: var(--ef-primary);
+  color: var(--ef-primary-foreground);
+}
+
+/* ========== 4. Scrollbar — Hidden (design system) ========== */
+
 html {
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
 html::-webkit-scrollbar {
   display: none;
 }
 
-/* === Code Blocks — JetBrains Mono === */
-code, pre, .code-block, kbd {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+/* ========== 5. Typography ========== */
+
+/* Headings — Space Grotesk (set in docs.json, reinforce here) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  letter-spacing: -0.02em;
 }
 
-/* === Embed Mode: Hide navbar & footer when ?embed=true === */
+/* Code / Numbers / IDs — JetBrains Mono (design system mandate) */
+code, pre, kbd,
+.code-block,
+[class*="code-group"],
+[class*="request-example"],
+[class*="response-example"] {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace !important;
+}
+
+/* Mono for data-heavy elements */
+.method-pill,
+.method-nav-pill,
+.nav-tag-pill,
+[class*="api-section"] code {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========== 6. De-Rounding — Sharp Edges (核心设计原则) ========== */
+
+/* Global border-radius reset */
+.card,
+.callout,
+.code-block,
+.code-group,
+.accordion,
+.accordion-group,
+.frame,
+.steps,
+.tabs,
+[class*="api-section"],
+[class*="playground"],
+#topbar-cta-button,
+.method-pill,
+.method-nav-pill,
+.nav-tag-pill {
+  border-radius: 0 !important;
+}
+
+/* CTA button — slant clip-path (斜切角按钮) */
+#topbar-cta-button {
+  clip-path: polygon(
+    8px 0, 100% 0, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 0 100%, 0 8px
+  );
+}
+
+/* ========== 7. Sidebar ========== */
+
+/* Dark: industrial muted bg */
+.dark #sidebar,
+.dark #sidebar-content {
+  background-color: rgba(5, 5, 5, 0.9) !important;
+  border-color: var(--ef-border) !important;
+}
+
+/* Light: clean white */
+:root:not(.dark) #sidebar,
+:root:not(.dark) #sidebar-content {
+  background-color: rgba(249, 249, 249, 0.95) !important;
+  border-color: var(--ef-border) !important;
+}
+
+/* Active item — neon glow in dark, subtle highlight in light */
+.dark [data-active="true"] {
+  text-shadow: 0 0 8px rgba(255, 208, 0, 0.25);
+}
+
+:root:not(.dark) [data-active="true"] {
+  text-shadow: none;
+  font-weight: 600;
+}
+
+/* Sidebar group icons */
+.sidebar-group-icon {
+  opacity: 0.6;
+}
+
+/* ========== 8. Navbar ========== */
+
+/* Dark navbar */
+.dark #navbar,
+.dark .navbar-transition {
+  background-color: rgba(5, 5, 5, 0.85) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ef-border-subtle) !important;
+}
+
+/* Light navbar */
+:root:not(.dark) #navbar,
+:root:not(.dark) .navbar-transition {
+  background-color: rgba(249, 249, 249, 0.9) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ef-border) !important;
+}
+
+/* Navbar links — mono uppercase micro-label style */
+.navbar-link {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Tab bar — sharp underline */
+.nav-tabs-item {
+  border-radius: 0 !important;
+}
+
+/* ========== 9. Cards & Callouts ========== */
+
+/* Dark cards — glass panel style */
+.dark .card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px);
+}
+
+.dark .card:hover {
+  border-color: rgba(255, 208, 0, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(255, 208, 0, 0.05);
+}
+
+/* Light cards — subtle elevation */
+:root:not(.dark) .card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid var(--ef-border) !important;
+}
+
+:root:not(.dark) .card:hover {
+  border-color: rgba(212, 160, 23, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(212, 160, 23, 0.08);
+}
+
+/* Callouts — sharp with left accent border */
+.callout {
+  border-left: 2px solid var(--ef-primary) !important;
+}
+
+/* ========== 10. API Method Pills ========== */
+
+.method-pill {
+  font-size: 11px !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px !important;
+  font-weight: 600;
+}
+
+/* ========== 11. Code Blocks ========== */
+
+/* Dark code blocks — deep void */
+.dark .code-block,
+.dark .code-group,
+.dark pre {
+  background: rgba(10, 10, 12, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Light code blocks */
+:root:not(.dark) .code-block,
+:root:not(.dark) .code-group,
+:root:not(.dark) pre {
+  background: #f4f4f4 !important;
+  border: 1px solid var(--ef-border) !important;
+}
+
+/* ========== 12. Tables ========== */
+
+/* Sharpen table headers */
+th {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* Light table rows */
+:root:not(.dark) tr:nth-child(even) td {
+  background-color: rgba(244, 244, 244, 0.5);
+}
+
+.dark tr:nth-child(even) td {
+  background-color: rgba(39, 39, 42, 0.3);
+}
+
+/* ========== 13. Footer ========== */
+
+.dark footer,
+.dark #footer {
+  background-color: rgba(5, 5, 5, 0.95) !important;
+  border-top: 1px solid var(--ef-border-subtle) !important;
+}
+
+:root:not(.dark) footer,
+:root:not(.dark) #footer {
+  background-color: #f4f4f4 !important;
+  border-top: 1px solid var(--ef-border) !important;
+}
+
+/* Footer text — mono micro-label */
+footer a,
+#footer a {
+  font-size: 13px;
+}
+
+/* ========== 14. Links ========== */
+
+/* Dark mode links */
+.dark a:not([class]) {
+  color: var(--ef-primary);
+}
+
+.dark a:not([class]):hover {
+  text-shadow: 0 0 8px rgba(255, 208, 0, 0.2);
+}
+
+/* Light mode links */
+:root:not(.dark) a:not([class]) {
+  color: var(--ef-accent);
+}
+
+:root:not(.dark) a:not([class]):hover {
+  color: var(--ef-primary);
+}
+
+/* ========== 15. Pagination ========== */
+
+.pagination-next,
+.pagination-prev {
+  border-radius: 0 !important;
+}
+
+.dark .pagination-next,
+.dark .pagination-prev {
+  border-color: var(--ef-border) !important;
+}
+
+.dark .pagination-next:hover,
+.dark .pagination-prev:hover {
+  border-color: rgba(255, 208, 0, 0.3) !important;
+}
+
+:root:not(.dark) .pagination-next:hover,
+:root:not(.dark) .pagination-prev:hover {
+  border-color: rgba(212, 160, 23, 0.4) !important;
+}
+
+/* ========== 16. Search ========== */
+
+#search-input {
+  border-radius: 0 !important;
+}
+
+/* ========== 17. Embed Mode ========== */
+
 body.embed-mode #navbar,
 body.embed-mode #header,
 body.embed-mode footer,
@@ -62,27 +364,9 @@ body.embed-mode {
   padding-top: 0 !important;
 }
 
-/* === Subtle Neon Glow on Sidebar Active Item === */
-.dark [data-active="true"] {
-  text-shadow: 0 0 8px rgba(255, 208, 0, 0.3);
-}
+/* ========== 18. Responsive Tweaks ========== */
 
-/* === API Method Pills — Industrial Styling === */
-.dark .method-pill {
-  border-radius: 0 !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-/* === Cards — Sharper edges === */
-.dark .card {
-  border-radius: 2px !important;
-}
-
-/* === Topbar CTA Button — Industrial Yellow === */
-.dark #topbar-cta-button {
-  border-radius: 0 !important;
-  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+@media (max-width: 768px) {
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.25rem !important; }
 }

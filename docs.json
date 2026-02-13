@@ -2,11 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "linden",
   "name": "Endfield API",
-  "description": "终末地协议终端 API 文档 — 提供游戏数据查询、蓝图库、Wiki 百科、抽卡统计等功能的开放 API 平台。",
+  "description": "终末地协议终端 API 文档 — 游戏数据查询、蓝图库、Wiki 百科、抽卡统计等开放接口平台。",
   "colors": {
-    "primary": "#FFD000",
+    "primary": "#d4a017",
     "light": "#FFD000",
-    "dark": "#d4a017"
+    "dark": "#b8860b"
   },
   "favicon": "/logo/favicon.svg",
   "logo": {
@@ -31,9 +31,11 @@
     "color": {
       "dark": "#050505",
       "light": "#f9f9f9"
-    }
+    },
+    "decoration": "grid"
   },
   "styling": {
+    "eyebrows": "breadcrumbs",
     "codeblocks": {
       "theme": {
         "light": "github-light",
@@ -52,7 +54,7 @@
       },
       {
         "type": "github",
-        "href": "https://github.com/your-org/endfield-api"
+        "href": "https://github.com/Dnyo666/endfield-docs"
       }
     ],
     "primary": {
@@ -63,8 +65,27 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/your-org/endfield-api"
-    }
+      "github": "https://github.com/Dnyo666/endfield-docs",
+      "website": "https://end.shallow.ink"
+    },
+    "links": [
+      {
+        "header": "平台",
+        "items": [
+          { "label": "协议终端", "href": "https://end.shallow.ink" },
+          { "label": "控制台", "href": "https://end.shallow.ink/dashboard" },
+          { "label": "开发者", "href": "https://end.shallow.ink/dashboard/developer" }
+        ]
+      },
+      {
+        "header": "文档",
+        "items": [
+          { "label": "快速开始", "href": "/quickstart" },
+          { "label": "认证指南", "href": "/authentication" },
+          { "label": "API 参考", "href": "/api-reference" }
+        ]
+      }
+    ]
   },
   "api": {
     "openapi": "openapi.json",
@@ -83,7 +104,7 @@
         "groups": [
           {
             "group": "开始使用",
-            "icon": "rocket",
+            "icon": "terminal",
             "pages": [
               "introduction",
               "quickstart",
@@ -92,7 +113,7 @@
           },
           {
             "group": "核心概念",
-            "icon": "book-open",
+            "icon": "cpu",
             "pages": [
               "concepts/credentials",
               "concepts/rate-limiting",
@@ -102,7 +123,7 @@
           },
           {
             "group": "使用指南",
-            "icon": "compass",
+            "icon": "wrench",
             "pages": [
               "guides/web-integration",
               "guides/bot-integration",
@@ -114,10 +135,12 @@
       },
       {
         "tab": "API 参考",
+        "icon": "file-json",
         "openapi": "openapi.json"
       },
       {
         "tab": "更新日志",
+        "icon": "clock",
         "pages": [
           "changelog"
         ]
