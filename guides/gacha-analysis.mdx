@@ -95,6 +95,48 @@ if (accounts.need_select) {
 }
 ```
 
+## 模拟寻访
+
+无需 Framework Token，所有用户均可使用。
+
+### 获取可模拟卡池
+
+```bash
+curl https://api.end.shallow.ink/api/endfield/gacha/simulate/pools \
+  -H "X-API-Key: sk_your_api_key"
+```
+
+### 模拟抽卡
+
+```bash
+# 单抽
+curl -X POST https://api.end.shallow.ink/api/endfield/gacha/simulate/single \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"pool_id": "pool_id_here"}'
+
+# 十连
+curl -X POST https://api.end.shallow.ink/api/endfield/gacha/simulate/ten \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"pool_id": "pool_id_here"}'
+
+# 免费十连
+curl -X POST https://api.end.shallow.ink/api/endfield/gacha/simulate/free-ten \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"pool_id": "pool_id_here"}'
+```
+
+### 批量模拟
+
+```bash
+curl -X POST https://api.end.shallow.ink/api/endfield/gacha/simulate/batch \
+  -H "X-API-Key: sk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"pool_id": "pool_id_here", "count": 100}'
+```
+
 ## 卡池类型
 
 | 类型 | 值 | 说明 |
