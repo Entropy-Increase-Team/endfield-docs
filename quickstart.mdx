@@ -3,13 +3,9 @@ title: "快速开始"
 description: "5 分钟内完成你的第一次 Endfield API 调用。"
 ---
 
-## 1. 获取认证凭证
+## 1. 获取 API Key
 
-根据你的使用场景，选择合适的认证方式：
-
-<Tabs>
-  <Tab title="API Key（推荐）">
-    适合第三方开发者、机器人客户端。
+    获取 API Key 用于接口请求认证
 
     <Steps>
       <Step title="注册账号">
@@ -19,36 +15,13 @@ description: "5 分钟内完成你的第一次 Endfield API 调用。"
         进入 [开发者 → API 密钥](https://end.shallow.ink/dashboard/developer/apikeys) 页面，点击「创建密钥」。
       </Step>
       <Step title="保存密钥">
-        复制生成的 API Key（格式：`sk_xxxxxxxxxxxx`）。
+        复制生成的 API Key（格式：`ef_xxxxxxxxxxxx`）。
 
         <Warning>
-          API Key 仅在创建时显示一次，请妥善保存。
+          API Key 请勿泄露，避免无故滥用。
         </Warning>
       </Step>
     </Steps>
-  </Tab>
-  <Tab title="Anonymous Token">
-    适合前端应用的游客模式，无需注册。
-
-    ```bash
-    curl -X POST https://api.end.shallow.ink/api/v1/auth/anonymous-token \
-      -H "Content-Type: application/json" \
-      -d '{"fingerprint": "your-device-fingerprint-32chars-min"}'
-    ```
-
-    响应：
-    ```json
-    {
-      "code": 0,
-      "message": "成功",
-      "data": {
-        "token": "anon_xxxxxxxxxxxxxxxx",
-        "expires_in": 7200
-      }
-    }
-    ```
-  </Tab>
-</Tabs>
 
 ## 2. 发送第一个请求
 
@@ -107,25 +80,11 @@ resp, err := http.Get("https://api.end.shallow.ink/health")
 使用认证凭证查询游戏百科数据：
 
 <CodeGroup>
-```bash API Key
+```bash Curl
 curl https://api.end.shallow.ink/api/wiki/categories \
-  -H "X-API-Key: sk_your_api_key"
+  -H "X-API-Key: your_api_key"
 ```
 
-```bash Anonymous Token
-curl https://api.end.shallow.ink/api/wiki/categories \
-  -H "X-Anonymous-Token: anon_your_token"
-```
-
-```javascript JavaScript
-const response = await fetch('https://api.end.shallow.ink/api/wiki/categories', {
-  headers: {
-    'X-API-Key': 'sk_your_api_key'
-  }
-});
-const data = await response.json();
-console.log(data.data);
-```
 </CodeGroup>
 
 ## 4. 查询游戏数据（需要 Framework Token）
@@ -134,7 +93,7 @@ console.log(data.data);
 
 ```bash
 curl https://api.end.shallow.ink/api/endfield/user \
-  -H "X-API-Key: sk_your_api_key" \
+  -H "X-API-Key: your_api_key" \
   -H "X-Framework-Token: your_framework_token"
 ```
 
@@ -145,8 +104,8 @@ curl https://api.end.shallow.ink/api/endfield/user \
 ## 下一步
 
 <CardGroup cols={2}>
-  <Card title="认证详解" icon="shield" href="/authentication">
-    深入了解四种认证方式的获取和使用。
+  <Card title="凭证体系" icon="shield" href="/concepts/credentials">
+    分清楚接口凭证和游戏数据凭证。
   </Card>
   <Card title="API 参考" icon="file-json" href="/api-reference">
     查看完整的 API 端点列表和交互式文档。

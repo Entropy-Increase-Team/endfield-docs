@@ -100,8 +100,7 @@
             "icon": "terminal",
             "pages": [
               "introduction",
-              "quickstart",
-              "authentication"
+              "quickstart"
             ]
           },
           {
